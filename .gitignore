@@ -1,0 +1,7 @@
+.idea
+logs/*
+storage/*
+!storage/readme.md
+!logs/readme.md
+*.yaml
+*.exe
