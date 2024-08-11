@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"os"
+	"time"
 )
 
 var _ log.Logger = (*ZapLogger)(nil)
@@ -26,7 +27,7 @@ func Logger(mode string, logDir string) *ZapLogger {
 		CallerKey: "caller",
 		//MessageKey:     "msg",
 		StacktraceKey:  "stack",
-		EncodeTime:     zapcore.ISO8601TimeEncoder,
+		EncodeTime:     zapcore.TimeEncoderOfLayout(time.TimeOnly),
 		LineEnding:     zapcore.DefaultLineEnding,
 		EncodeLevel:    zapcore.CapitalLevelEncoder,
 		EncodeDuration: zapcore.SecondsDurationEncoder,

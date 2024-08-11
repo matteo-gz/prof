@@ -19,14 +19,14 @@ func (uc *Usecase) DealRun1(ctx context.Context, uri string) (relativePath strin
 	return
 }
 func (uc *Usecase) curlOne(ctx context.Context, uri string) (relativePath string, err error) {
-	data, err := curlGet(ctx, uri, 60*5)
+	data, contentType, err := curlGet(ctx, uri, 60*5)
 	if err != nil {
 		return
 	}
-	return uc.repo.CreateFile(uri, data)
+	return uc.repo.CreateFile(uri, contentType, data)
 }
 
-func curlGet(ctx context.Context, uri string, timeout int) (data []byte, err error) {
+func curlGet(ctx context.Context, uri string, timeout int) (data []byte, contentType string, err error) {
 	client := &http.Client{Timeout: time.Second * time.Duration(timeout)}
 	req, err := http.NewRequestWithContext(ctx, "GET", uri, http.NoBody)
 	if err != nil {
@@ -41,5 +41,6 @@ func curlGet(ctx context.Context, uri string, timeout int) (data []byte, err err
 	if res.StatusCode != 200 {
 		err = errors.New(uri + "\n" + string(data))
 	}
+	contentType = res.Header.Get("Content-Type")
 	return
 }
