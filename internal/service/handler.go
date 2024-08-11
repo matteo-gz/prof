@@ -31,6 +31,9 @@ func (s *Service) Index(c *gin.Context) {
 	}
 	c.HTML(http.StatusOK, "index.html", gin.H{})
 }
+func (s *Service) Css(c *gin.Context) {
+	c.String(http.StatusOK, tpl_css)
+}
 func (s *Service) PersonCurl(c *gin.Context) {
 	if s.env == conf.EnvProd {
 		c.Header("Content-Type", "text/html; charset=utf-8")
