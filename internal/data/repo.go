@@ -37,9 +37,9 @@ func (rp *repo) GetFileType(dir string) string {
 	return getFileType(dir)
 }
 
-func (rp *repo) CreateFile(uri string, data []byte) (RelativePath string, err error) {
+func (rp *repo) CreateFile(uri, contentType string, data []byte) (RelativePath string, err error) {
 	var ext string
-	if ext, err = checkMimeByData(data); err != nil {
+	if ext, err = checkMimeByData(data, contentType); err != nil {
 		return
 	}
 	filename, err := rp.data.file.getFileName(uri, ext)
@@ -54,7 +54,7 @@ func (rp *repo) CreateFile(uri string, data []byte) (RelativePath string, err er
 }
 func (rp *repo) CreateFileByUpload(fileName string, data []byte) (relativePath string, err error) {
 	var ext string
-	if ext, err = checkMimeByData(data); err != nil {
+	if ext, err = checkMimeByData(data, ""); err != nil {
 		return
 	}
 	filename, err := rp.data.file.getFileName2(fileName, ext)

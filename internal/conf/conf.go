@@ -3,7 +3,7 @@ package conf
 import (
 	"errors"
 	"gopkg.in/yaml.v3"
-	"io/ioutil"
+	"os"
 )
 
 const (
@@ -35,7 +35,7 @@ func Load(env string, flagPort, flagEnv, flagDir, flagPprofPort, flagLog string)
 			},
 		}
 	} else {
-		if in, err = ioutil.ReadFile(env); err == nil {
+		if in, err = os.ReadFile(env); err == nil {
 			err = yaml.Unmarshal(in, &bs)
 		}
 	}

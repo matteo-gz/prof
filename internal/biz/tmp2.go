@@ -28,7 +28,7 @@ func newBatch(url string, log *log.Helper) *batch {
 	}
 }
 
-type saveFile func(url string, data []byte) (relativePath string, err error)
+type saveFile func(url string, contentType string, data []byte) (relativePath string, err error)
 
 func (b *batch) Start(ctx context.Context, fn saveFile) (res []cse, err error) {
 	if err = b.setUrl(); err != nil {
@@ -64,12 +64,12 @@ func (b *batch) run(ctx context.Context, url string, ch chan cse, wg *sync.WaitG
 		wg.Done()
 
 	}()
-	data, err := curlGet(ctx, url, b.seconds+5)
+	data, contentType, err := curlGet(ctx, url, b.seconds+5)
 	if err != nil {
 		ch <- cse{"", err}
 		return
 	}
-	relativePath, err := fn(url, data)
+	relativePath, err := fn(url, contentType, data)
 	if err != nil {
 		ch <- cse{"", err}
 		return
@@ -80,10 +80,7 @@ func (b *batch) run(ctx context.Context, url string, ch chan cse, wg *sync.WaitG
 
 func (uc *Usecase) DealRun(ctx context.Context, uri string) (res []cse, err error) {
 	b := newBatch(uri, uc.log)
-	fn := func(url string, bytes []byte) (string, error) {
-		return uc.repo.CreateFile(url, bytes)
-	}
-	return b.Start(ctx, fn)
+	return b.Start(ctx, uc.repo.CreateFile)
 }
 func (b *batch) setUrl() (err error) {
 	uri, err := url.QueryUnescape(b.oriUrl)

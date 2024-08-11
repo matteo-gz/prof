@@ -65,9 +65,6 @@ func (t *task) safeOptList(fn func()) {
 }
 func (t *task) getPortByDir(dir string) (port int, err error) {
 	p := t.GetProxy(dir)
-	if err != nil {
-		return
-	}
 	port, err = p.GetCanUsePort()
 	return
 }

@@ -7,7 +7,7 @@ type Repo interface {
 	GetAbsDir(string2 string) string
 	GetFileList(date string) (list, files []string, err error)
 	GetFileType(dir string) string
-	CreateFile(url string, data []byte) (relativePath string, err error)
+	CreateFile(url string, contentType string, data []byte) (relativePath string, err error)
 	CreateFileByUpload(fileName string, data []byte) (relativePath string, err error)
 }
 

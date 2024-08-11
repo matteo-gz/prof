@@ -46,9 +46,9 @@ func (f *file) createFile(filename string, dir string, data []byte) (relativePat
 	} else {
 		f.log.Debugf("create file %s", filePath)
 		f1, err = os.Create(filePath)
-		if err != nil {
-			return
-		}
+	}
+	if err != nil {
+		return
 	}
 	if _, err = f1.Write(data); err != nil {
 		return
@@ -56,8 +56,11 @@ func (f *file) createFile(filename string, dir string, data []byte) (relativePat
 	return f.getRelDir(filePath), nil
 }
 
-func checkMimeByData(data []byte) (string, error) {
+func checkMimeByData(data []byte, contentType string) (string, error) {
 	mtype := mimetype.Detect(data)
+	if mimeTrace == mtype.String() && contentType != "" {
+		return checkMime(contentType)
+	}
 	return checkMime(mtype.String())
 }
 func checkMime(string2 string) (string, error) {
