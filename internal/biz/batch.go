@@ -11,20 +11,22 @@ import (
 )
 
 type batch struct {
-	oriUrl   string
-	fileList []string
-	seconds  int
-	url      string
-	urlList  []string
-	log      *log.Helper
+	oriUrl        string
+	fileList      []string
+	seconds       int
+	url           string
+	urlList       []string
+	log           *log.Helper
+	denyPrivateIP bool
 }
 
 const maxTime = 180
 
-func newBatch(url string, log *log.Helper) *batch {
+func newBatch(url string, log *log.Helper, denyPrivateIP bool) *batch {
 	return &batch{
-		oriUrl: url,
-		log:    log,
+		oriUrl:        url,
+		log:           log,
+		denyPrivateIP: denyPrivateIP,
 	}
 }
 
@@ -79,7 +81,7 @@ func (b *batch) run(ctx context.Context, url string, ch chan cse, wg *sync.WaitG
 }
 
 func (uc *Usecase) DealRun(ctx context.Context, uri string) (res []cse, err error) {
-	b := newBatch(uri, uc.log)
+	b := newBatch(uri, uc.log, uc.denyPrivateIP)
 	return b.Start(ctx, uc.repo.CreateFile)
 }
 func (b *batch) setUrl() (err error) {
@@ -87,7 +89,7 @@ func (b *batch) setUrl() (err error) {
 	if err != nil {
 		return
 	}
-	if err = validateURL(uri); err != nil {
+	if err = validateURL(uri, b.denyPrivateIP); err != nil {
 		return
 	}
 	urlP, err := url.Parse(uri)

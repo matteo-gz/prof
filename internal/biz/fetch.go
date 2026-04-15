@@ -20,7 +20,7 @@ func (uc *Usecase) DealRun1(ctx context.Context, uri string) (relativePath strin
 	relativePath, err = uc.curlOne(ctx, uri)
 	return
 }
-func validateURL(uri string) error {
+func validateURL(uri string, denyPrivateIP bool) error {
 	u, err := url.Parse(uri)
 	if err != nil {
 		return errors.New("invalid url")
@@ -28,16 +28,18 @@ func validateURL(uri string) error {
 	if u.Scheme != "http" && u.Scheme != "https" {
 		return errors.New("only http/https allowed")
 	}
-	host := u.Hostname()
-	ip := net.ParseIP(host)
-	if ip != nil && (ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast()) {
-		return errors.New("private/loopback IP not allowed")
+	if denyPrivateIP {
+		host := u.Hostname()
+		ip := net.ParseIP(host)
+		if ip != nil && (ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast()) {
+			return errors.New("private/loopback IP not allowed")
+		}
 	}
 	return nil
 }
 
 func (uc *Usecase) curlOne(ctx context.Context, uri string) (relativePath string, err error) {
-	if err = validateURL(uri); err != nil {
+	if err = validateURL(uri, uc.denyPrivateIP); err != nil {
 		return
 	}
 	data, contentType, err := curlGet(ctx, uri, curlTimeout)

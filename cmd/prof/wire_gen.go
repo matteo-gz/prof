@@ -24,7 +24,7 @@ func wireApp(bs *conf.Bs, confServer *conf.Server, confData *conf.Data, logger l
 		return nil, nil, err
 	}
 	repo := data.NewRepo(dataData, logger)
-	usecase := biz.NewUsecase(repo, logger)
+	usecase := biz.NewUsecase(repo, logger, bs.App.DenyPrivateIP)
 	serviceService := service.NewService(bs, usecase, logger)
 	httpServer := server.NewHTTPServer(bs, serviceService, logger)
 	app := newApp(logger, httpServer)

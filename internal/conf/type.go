@@ -10,8 +10,9 @@ type Server struct {
 	Port2 string `yaml:"Port2"`
 }
 type App struct {
-	Env string `yaml:"Env"`
-	Log string `yaml:"Log"`
+	Env           string `yaml:"Env"`
+	Log           string `yaml:"Log"`
+	DenyPrivateIP bool   `yaml:"DenyPrivateIP"`
 }
 type Bs struct {
 	Server *Server `yaml:"Server"`
