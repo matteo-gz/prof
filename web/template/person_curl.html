@@ -1,8 +1,10 @@
-<html>
+<!DOCTYPE html>
+<html lang="zh">
 <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>prof</title>
-    <link href="../bootstrap.min.css" rel="stylesheet"
-          crossorigin="anonymous">
+    <link href="/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
 </head>
 <body>
 <div class="container">
@@ -25,60 +27,101 @@
         </div>
     </div>
 </div>
-</body>
+
 <script>
-    let key = "id"
-    const tpl_res3 = document.querySelector("#result3")
-    const deleteStore = function (index) {
-        let msg = "wanna delete?";
-        if (confirm(msg) === true) {
-            localStorage.removeItem(index)
-            loadStore()
-            return true;
-        } else {
-            return false;
+    var STORAGE_KEY = "prof:history";
+    var resultEl = document.querySelector("#result3");
+
+    function deleteStore(index) {
+        if (confirm("wanna delete?")) {
+            localStorage.removeItem("prof:" + index);
+            var ids = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+            ids = ids.filter(function (id) { return id !== index; });
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
+            loadStore();
         }
     }
-    const loadStore = function () {
-        let res = localStorage.getItem(key)
-        let a = []
+
+    function loadStore() {
+        var res = localStorage.getItem(STORAGE_KEY);
+        var a = [];
         if (res !== null) {
-            a = JSON.parse(res)
+            try { a = JSON.parse(res); } catch(e) { a = []; }
         }
-        a = a.reverse()
-        let t = ""
-        t += "<div>"
-        t += "<ol>"
-        for (let i of a) {
-            let obj = JSON.parse(localStorage.getItem(i))
-            if (obj === null) {
-                continue
+        a = a.slice().reverse();
+
+        resultEl.textContent = "";
+        var container = document.createElement("div");
+        var ol = document.createElement("ol");
+
+        for (var i = 0; i < a.length; i++) {
+            var raw = localStorage.getItem("prof:" + a[i]);
+            if (raw === null) { continue; }
+            var obj;
+            try { obj = JSON.parse(raw); } catch(e) { continue; }
+
+            var li = document.createElement("li");
+            var span = document.createElement("span");
+
+            var btn = document.createElement("button");
+            btn.type = "button";
+            btn.textContent = "delete->" + obj.index;
+            (function (idx) {
+                btn.addEventListener("click", function () { deleteStore(idx); });
+            })(obj.index);
+            span.appendChild(btn);
+
+            var timeDiv = document.createElement("div");
+            timeDiv.textContent = obj.now;
+            span.appendChild(timeDiv);
+
+            var actDiv = document.createElement("div");
+            actDiv.textContent = "act: " + obj.act;
+            span.appendChild(actDiv);
+
+            var nameDiv = document.createElement("div");
+            nameDiv.textContent = "name: " + obj.name;
+            span.appendChild(nameDiv);
+
+            var paths = obj.paths || [];
+            if (paths.length > 0) {
+                var pathOl = document.createElement("ol");
+                for (var j = 0; j < paths.length; j++) {
+                    var pathLi = document.createElement("li");
+                    var link = document.createElement("a");
+                    link.target = "_blank";
+                    link.href = "/file?dir=/" + encodeURIComponent(paths[j]);
+                    link.textContent = paths[j];
+                    pathLi.appendChild(link);
+                    pathOl.appendChild(pathLi);
+                }
+                span.appendChild(pathOl);
+            } else if (obj.data) {
+                var legacyDiv = document.createElement("div");
+                legacyDiv.textContent = "(legacy entry)";
+                span.appendChild(legacyDiv);
             }
-            let tpl = "<span>"
-            let idx = obj.index
-            tpl += "<button type=\"button\" onclick='deleteStore(" + idx + ")'>delete->" + idx + "</button>"
-            tpl += "<div>" + obj.now + "</div>"
-            tpl += "<div>act: " + obj.act + "</div>"
-            tpl += "<div>name: " + obj.name + "</div>"
-            tpl += obj.data
-            tpl += "</span>"
-            t += "<li>" + tpl + "</li>"
+
+            li.appendChild(span);
+            ol.appendChild(li);
         }
-        t += "</ol>"
-        t += "</div>"
-        tpl_res3.innerHTML = t
+        container.appendChild(ol);
+        resultEl.appendChild(container);
     }
-    loadStore()
-    const clearAll = function () {
-        let msg = "wanna delete?";
-        if (confirm(msg) === true) {
-            localStorage.clear()
-            loadStore()
-            return true;
-        } else {
-            return false;
+
+    function clearAll() {
+        if (confirm("wanna delete?")) {
+            var ids = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+            for (var i = 0; i < ids.length; i++) {
+                localStorage.removeItem("prof:" + ids[i]);
+            }
+            localStorage.removeItem(STORAGE_KEY);
+            loadStore();
         }
     }
-    document.querySelector('#clear').addEventListener('click', clearAll)
+
+    loadStore();
+    document.querySelector("#clear").addEventListener("click", clearAll);
 </script>
+</body>
 </html>

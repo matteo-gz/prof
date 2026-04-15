@@ -4,9 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
-	"html/template"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,8 +12,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/matteo-gz/prof/internal/biz"
-	"github.com/matteo-gz/prof/internal/conf"
 	"github.com/matteo-gz/prof/pkg/pproftype"
+	"github.com/matteo-gz/prof/web"
 )
 
 const (
@@ -26,24 +24,34 @@ const (
 )
 
 func (s *Service) Index(c *gin.Context) {
-	if s.env == conf.EnvProd {
-		c.Header("Content-Type", "text/html; charset=utf-8")
-		c.String(http.StatusOK, tpl_index)
+	c.Header("Content-Type", "text/html; charset=utf-8")
+	var buf bytes.Buffer
+	if err := s.tmpl.ExecuteTemplate(&buf, "index.html", nil); err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.HTML(http.StatusOK, "index.html", gin.H{})
+	c.String(http.StatusOK, buf.String())
 }
+
 func (s *Service) Css(c *gin.Context) {
-	c.String(http.StatusOK, tpl_css)
-}
-func (s *Service) PersonCurl(c *gin.Context) {
-	if s.env == conf.EnvProd {
-		c.Header("Content-Type", "text/html; charset=utf-8")
-		c.String(http.StatusOK, tpl_person_curl)
+	data, err := web.StaticFS.ReadFile("static/bootstrap.min.css")
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.HTML(http.StatusOK, "person_curl.html", gin.H{})
+	c.Data(http.StatusOK, "text/css; charset=utf-8", data)
 }
+
+func (s *Service) PersonCurl(c *gin.Context) {
+	c.Header("Content-Type", "text/html; charset=utf-8")
+	var buf bytes.Buffer
+	if err := s.tmpl.ExecuteTemplate(&buf, "person_curl.html", nil); err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	c.String(http.StatusOK, buf.String())
+}
+
 func (s *Service) FileList(c *gin.Context) {
 	dir := c.Query("dir")
 	lists, files, _ := s.uc.GetFileList(dir)
@@ -52,19 +60,15 @@ func (s *Service) FileList(c *gin.Context) {
 		"dir":   dir,
 		"files": files,
 	}
-	if s.env == conf.EnvProd {
-		c.Header("Content-Type", "text/html; charset=utf-8")
-		var buf bytes.Buffer
-		err := template.Must(template.New("list").Parse(tpl_list)).Execute(&buf, data)
-		if err != nil {
-			c.String(http.StatusOK, err.Error())
-			return
-		}
-		c.String(http.StatusOK, buf.String())
+	c.Header("Content-Type", "text/html; charset=utf-8")
+	var buf bytes.Buffer
+	if err := s.tmpl.ExecuteTemplate(&buf, "list.html", data); err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.HTML(http.StatusOK, "list.html", data)
+	c.String(http.StatusOK, buf.String())
 }
+
 func (s *Service) File(c *gin.Context) {
 	dir := c.Query("dir")
 	dir = filepath.Clean(dir)
@@ -105,6 +109,7 @@ func (s *Service) File(c *gin.Context) {
 		return
 	}
 }
+
 func newUri(c *gin.Context) biz.Uri {
 	return biz.Uri{
 		Path:  c.Request.URL.Path,
@@ -126,8 +131,8 @@ func (s *Service) PprofProxy(c *gin.Context) {
 	if err != nil {
 		c.String(404, err.Error())
 	}
-
 }
+
 func (s *Service) TraceProxy(c *gin.Context) {
 	u := newUri(c)
 	u.Route = RouteTrace
@@ -137,7 +142,7 @@ func (s *Service) TraceProxy(c *gin.Context) {
 		body = strings.ReplaceAll(body, "src=\"/", "src=\""+currPath)
 		body = strings.ReplaceAll(body, "action=\"/", "action=\""+currPath)
 		body = strings.ReplaceAll(body, "getJSON('/", "getJSON('"+currPath)
-		body = strings.ReplaceAll(body, "url = '/", "url = '"+currPath) // resolve js :[jsontrace]
+		body = strings.ReplaceAll(body, "url = '/", "url = '"+currPath)
 		return body
 	}
 	s.log.Debugf("%#v", u)
@@ -146,6 +151,7 @@ func (s *Service) TraceProxy(c *gin.Context) {
 		c.String(404, err.Error())
 	}
 }
+
 func (s *Service) Upload(c *gin.Context) {
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
@@ -158,10 +164,11 @@ func (s *Service) Upload(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"res": []string{htmlStr(relativePath)},
+		"res": []string{relativePath},
 		"id":  time.Now().UnixMilli(),
 	})
 }
+
 func (s *Service) Run(c *gin.Context) {
 	uri := c.PostForm("url")
 	res, err := s.uc.DealRun(c.Request.Context(), uri)
@@ -174,22 +181,17 @@ func (s *Service) Run(c *gin.Context) {
 	var res2 []string
 	for i := range res {
 		if res[i].E != nil {
-			res2 = append(res2, htmlStr(res[i].E.Error()))
+			res2 = append(res2, res[i].E.Error())
 		} else {
-			res2 = append(res2, htmlStr(res[i].S))
+			res2 = append(res2, res[i].S)
 		}
-
 	}
 	c.JSON(200, gin.H{
 		"id":  time.Now().UnixMilli(),
 		"res": res2,
 	})
 }
-func htmlStr(res string) string {
-	u := "/file?dir=/" + url.QueryEscape(res)
-	res = fmt.Sprintf("<a target=\"_blank\" href='%s'>%s</a>", u, res)
-	return res
-}
+
 func (s *Service) Run1(c *gin.Context) {
 	uri := c.PostForm("url")
 	relativePath, err := s.uc.DealRun1(c.Request.Context(), uri)
@@ -199,7 +201,6 @@ func (s *Service) Run1(c *gin.Context) {
 	} else {
 		res = relativePath
 	}
-	res = htmlStr(res)
 	c.JSON(200, gin.H{
 		"id":  time.Now().UnixMilli(),
 		"res": []string{res},

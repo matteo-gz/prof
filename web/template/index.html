@@ -1,8 +1,10 @@
-<html>
+<!DOCTYPE html>
+<html lang="zh">
 <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>prof</title>
-    <link href="./bootstrap.min.css" rel="stylesheet"
-          crossorigin="anonymous">
+    <link href="/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
 </head>
 <body>
 <div class="container">
@@ -20,7 +22,6 @@
 
     <div class="row">
         <div class="col">
-            <!--    curl one-->
             <div class="mb-3">
                 <legend>curl one</legend>
                 <div class="mb-3">
@@ -33,7 +34,6 @@
             </div>
         </div>
         <div class="col">
-            <!--    upload -->
             <div class="mb-3">
                 <legend>upload file</legend>
                 <div class="mb-3">
@@ -45,12 +45,9 @@
                 <div id="result2"></div>
             </div>
         </div>
-
-
     </div>
     <div class="row">
         <div class="col">
-            <!--curl batch-->
             <div class="mb-3">
                 <legend>curl batch</legend>
                 <div class="mb-3">
@@ -77,191 +74,136 @@
             <div id="result"></div>
         </div>
     </div>
-
 </div>
-</body>
-
 
 <script>
-    let runlock = false;
-    let runlock2 = false;
-    let uploadlock = false;
-    let key = "id"
-    const run = function () {
-        tpl_res1.innerText = "load..."
-        let u = document.querySelector('input[name="url"]').value
-        let uaf = encodeURIComponent(u)
-        if (u === "") {
-            tpl_res1.innerText = "url not"
-            return
+    var locks = {};
+    var STORAGE_KEY = "prof:history";
+
+    function buildResultList(paths) {
+        var ol = document.createElement("ol");
+        for (var i = 0; i < paths.length; i++) {
+            var li = document.createElement("li");
+            var a = document.createElement("a");
+            a.target = "_blank";
+            a.href = "/file?dir=/" + encodeURIComponent(paths[i]);
+            a.textContent = paths[i];
+            li.appendChild(a);
+            ol.appendChild(li);
         }
-        let pass = 0
-        let itv = setInterval(function () {
-            ++pass
-            tpl_res1.innerText = "fetching..." + pass
-        }, 1000);
-        if (runlock) {
-            return
-        }
-        runlock = true
-        let formdata = new FormData();
-        formdata.append("url", uaf);
-        let requestOptions = {
-            method: 'POST',
-            body: formdata,
-        }
-        fetch("/opt/run", requestOptions)
-            .then((res) => {
-                window.clearInterval(itv)
-                runlock = false
-                return res.json()
-            })
-            .then((data) => {
-                let t = "<ol>"
-                for (let i of data.res) {
-                    t += "<li>" + i + "</li>"
-                }
-                t += "</ol>"
-                tpl_res1.innerHTML = t
-                store(data.id, t, u, "curl batch")
-                document.querySelector('input[name="url"]').value = ""
-            })
-            .catch((error) => {
-                console.log(error)
-            });
-    };
-    const run1 = function () {
-        tpl_res3.innerText = "load..."
-        let u = document.querySelector('input[name="url_one"]').value
-        let uaf = encodeURIComponent(u)
-        if (u === "") {
-            tpl_res3.innerText = "url not"
-            return
-        }
-        let pass = 0
-        let itv = setInterval(function () {
-            ++pass
-            tpl_res3.innerText = "fetching..." + pass
-        }, 1000);
-        if (runlock2) {
-            return
-        }
-        runlock2 = true
-        let formdata = new FormData();
-        formdata.append("url", uaf);
-        let requestOptions = {
-            method: 'POST',
-            body: formdata,
-        }
-        fetch("/opt/run1", requestOptions)
-            .then((res) => {
-                window.clearInterval(itv)
-                runlock2 = false
-                return res.json()
-            })
-            .then((data) => {
-                let t = "<ol>"
-                for (let i of data.res) {
-                    t += "<li>" + i + "</li>"
-                }
-                t += "</ol>"
-                tpl_res3.innerHTML = t
-                store(data.id, t, u, "curl one")
-                document.querySelector('input[name="url_one"]').value = ""
-            })
-            .catch((error) => {
-                console.log(error)
-            });
-    };
-    const store = function (index, data, name, act) {
-        let res = localStorage.getItem(key)
-        let a = []
-        if (res !== null) {
-            a = JSON.parse(res)
-        }
-        a.push(index)
-        localStorage.setItem(key, JSON.stringify(a))
-        let obj = {
-            index: index,
-            data: data,
-            name: name,
-            act: act,
-            now: getNowTime(),
-        }
-        localStorage.setItem(index, JSON.stringify(obj));
+        return ol;
     }
 
-    const upload = function () {
-        let formdata = new FormData();
-        let ff = document.querySelector('input[name="file"]').files[0]
-        if (ff == null) {
-            tpl_res2.innerText = "file empty..."
+    function fetchProfile(inputName, endpoint, resultEl, lockKey, actLabel) {
+        if (locks[lockKey]) { return; }
+
+        var u = document.querySelector('input[name="' + inputName + '"]').value;
+        if (u === "") {
+            resultEl.textContent = "url not";
             return;
         }
-        tpl_res2.innerText = "load..."
-        formdata.append("file", ff, ff.name);
-        let requestOptions = {
-            method: 'POST',
-            body: formdata,
-            redirect: 'follow'
-        };
-        tpl_res2.innerText = "fetching..."
 
-        if (uploadlock) {
-            return
+        locks[lockKey] = true;
+        resultEl.textContent = "load...";
+
+        var pass = 0;
+        var itv = setInterval(function () {
+            ++pass;
+            resultEl.textContent = "fetching..." + pass;
+        }, 1000);
+
+        var formdata = new FormData();
+        formdata.append("url", encodeURIComponent(u));
+
+        fetch(endpoint, { method: "POST", body: formdata })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                window.clearInterval(itv);
+                locks[lockKey] = false;
+                resultEl.textContent = "";
+                resultEl.appendChild(buildResultList(data.res));
+                store(data.id, data.res, u, actLabel);
+                document.querySelector('input[name="' + inputName + '"]').value = "";
+            })
+            .catch(function (error) {
+                window.clearInterval(itv);
+                locks[lockKey] = false;
+                resultEl.textContent = "Error: " + error.message;
+            });
+    }
+
+    function upload() {
+        if (locks["upload"]) { return; }
+
+        var ff = document.querySelector('input[name="file"]').files[0];
+        if (ff == null) {
+            resultUpload.textContent = "file empty...";
+            return;
         }
-        uploadlock = true
 
-        fetch("/opt/upload", requestOptions)
-            .then(async (res) => {
-                uploadlock = false
+        locks["upload"] = true;
+        resultUpload.textContent = "fetching...";
+
+        var formdata = new FormData();
+        formdata.append("file", ff, ff.name);
+
+        fetch("/opt/upload", { method: "POST", body: formdata, redirect: "follow" })
+            .then(function (res) {
                 if (res.status === 200) {
-                    let data = await res.json()
-                    return data
+                    return res.json();
                 } else {
-                    let data = await res.text()
-                    console.log(data)
-                    throw new Error(data)
+                    return res.text().then(function (t) { throw new Error(t); });
                 }
             })
-            .then((data) => {
-                if (data === undefined) {
-                    return
-                }
-                let t = "<ol>"
-                for (let i of data.res) {
-                    t += "<li>" + i + "</li>"
-                }
-                t += "</ol>"
-                tpl_res2.innerHTML = t
-                store(data.id, t, ff.name, "upload")
+            .then(function (data) {
+                locks["upload"] = false;
+                resultUpload.textContent = "";
+                resultUpload.appendChild(buildResultList(data.res));
+                store(data.id, data.res, ff.name, "upload");
+                document.querySelector('input[name="file"]').value = "";
+            })
+            .catch(function (error) {
+                locks["upload"] = false;
+                resultUpload.textContent = "Error: " + error.message;
+            });
+    }
 
-                document.querySelector('input[name="file"]').value = ""
-            }).catch(error => {
-            tpl_res2.innerHTML = error.toString()
-        });
+    function store(index, paths, name, act) {
+        var res = localStorage.getItem(STORAGE_KEY);
+        var a = [];
+        if (res !== null) {
+            try { a = JSON.parse(res); } catch(e) { a = []; }
+        }
+        a.push(index);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(a));
+        var obj = {
+            index: index,
+            paths: paths,
+            name: name,
+            act: act,
+            now: getNowTime()
+        };
+        localStorage.setItem("prof:" + index, JSON.stringify(obj));
     }
 
     function getNowTime() {
-        let date = new Date();
-        let year = date.getFullYear();
-        let month = date.getMonth() + 1;
-        let day = date.getDate();
-        let hour = date.getHours();
-        let minute = date.getMinutes();
-        let second = date.getSeconds();
-        return 'time：' + year + '-' + addZero(month) + '-' + addZero(day) + ' ' + addZero(hour) + ':' + addZero(minute) + ':' + addZero(second);
+        var d = new Date();
+        function pad(n) { return n < 10 ? "0" + n : "" + n; }
+        return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) +
+            " " + pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
     }
 
-    function addZero(s) {
-        return s < 10 ? ('0' + s) : s;
-    }
+    var resultBatch = document.querySelector("#result");
+    var resultUpload = document.querySelector("#result2");
+    var resultOne = document.querySelector("#result3");
 
-    document.querySelector('#fetchdata').addEventListener('click', run)
-    document.querySelector('#fetchdata1').addEventListener('click', run1)
-    document.querySelector('#subf').addEventListener('click', upload)
-    const tpl_res1 = document.querySelector("#result")
-    const tpl_res2 = document.querySelector("#result2")
-    const tpl_res3 = document.querySelector("#result3")
+    document.querySelector("#fetchdata").addEventListener("click", function () {
+        fetchProfile("url", "/opt/run", resultBatch, "run", "curl batch");
+    });
+    document.querySelector("#fetchdata1").addEventListener("click", function () {
+        fetchProfile("url_one", "/opt/run1", resultOne, "run1", "curl one");
+    });
+    document.querySelector("#subf").addEventListener("click", upload);
 </script>
+</body>
 </html>

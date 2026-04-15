@@ -1,14 +1,14 @@
 package server
 
 import (
+	"io"
+	"net/http"
+	"os"
+
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 	"github.com/matteo-gz/prof/internal/conf"
 	"github.com/matteo-gz/prof/internal/service"
-	"net/http"
-
-	"io"
-	"os"
 )
 
 const (
@@ -22,6 +22,7 @@ func (h *HTTPServerX) ginMode() string {
 		return gin.DebugMode
 	}
 }
+
 func (h *HTTPServerX) ginLog() error {
 	h.log.Infof("log dir: %s", h.logDir)
 	f, err := os.Create(h.logDir + "/gin.log")
@@ -42,9 +43,6 @@ func (h *HTTPServerX) router() (r *gin.Engine, err error) {
 	if err = r.SetTrustedProxies([]string{"127.0.0.1"}); err != nil {
 		return
 	}
-	if h.env != conf.EnvProd {
-		r.LoadHTMLGlob("./web/template/*")
-	}
 	r.GET("/", h.srv.Index)
 	r.GET("/history", h.srv.FileList)
 	r.GET("/file", h.srv.File)
@@ -57,6 +55,7 @@ func (h *HTTPServerX) router() (r *gin.Engine, err error) {
 	r.POST("/opt/run1", h.srv.Run1)
 	return
 }
+
 func (h *HTTPServerX) pprof() error {
 	r := gin.Default()
 	r.GET("/", func(c *gin.Context) {

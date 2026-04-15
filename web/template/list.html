@@ -1,7 +1,9 @@
-<html>
+<!DOCTYPE html>
+<html lang="zh">
 <head>
-    <link href="./bootstrap.min.css" rel="stylesheet"
-          crossorigin="anonymous">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
 </head>
 <body>
 <div class="container">
@@ -12,7 +14,6 @@
         <li class="nav-item">
             <a class="nav-link disabled" href="/history">file list</a>
         </li>
-
     </ul>
     <div class="row">
         <a href="#" onclick="window.history.go(-1)">{{.dir}}</a>
@@ -24,7 +25,6 @@
             <li><a href="/history?dir={{$dir}}/{{.}}">{{.}}</a></li>
             {{end}}
         </ol>
-
     </div>
     <div class="row">
         <ol class="list-group list-group-flush">
@@ -34,7 +34,5 @@
         </ol>
     </div>
 </div>
-
 </body>
-
 </html>
