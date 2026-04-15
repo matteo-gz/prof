@@ -1,6 +1,6 @@
 module github.com/matteo-gz/prof
 
-go 1.17
+go 1.22
 
 require (
 	github.com/gabriel-vasile/mimetype v1.4.1

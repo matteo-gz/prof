@@ -19,15 +19,15 @@ func NewRepo(data *Data, logger log.Logger) biz.Repo {
 	}
 }
 
-func (rp *repo) GetPortByDir(string2 string) (port int, err error) {
-	dir := rp.data.file.getAbsDir(string2)
+func (rp *repo) GetPortByDir(relPath string) (port int, err error) {
+	dir := rp.data.file.getAbsDir(relPath)
 	if a := filex.IsFileExist(dir); !a {
 		return 0, errors.New("file not exist")
 	}
 	return rp.data.task.getPortByDir(dir)
 }
-func (rp *repo) GetAbsDir(string2 string) string {
-	return rp.data.file.getAbsDir(string2)
+func (rp *repo) GetAbsDir(relPath string) string {
+	return rp.data.file.getAbsDir(relPath)
 }
 
 func (rp *repo) GetFileList(date string) (list, files []string, err error) {

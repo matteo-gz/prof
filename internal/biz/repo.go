@@ -3,8 +3,8 @@ package biz
 import "github.com/go-kratos/kratos/v2/log"
 
 type Repo interface {
-	GetPortByDir(string2 string) (port int, err error)
-	GetAbsDir(string2 string) string
+	GetPortByDir(relPath string) (port int, err error)
+	GetAbsDir(relPath string) string
 	GetFileList(date string) (list, files []string, err error)
 	GetFileType(dir string) string
 	CreateFile(url string, contentType string, data []byte) (relativePath string, err error)

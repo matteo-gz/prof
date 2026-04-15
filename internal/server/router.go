@@ -24,11 +24,12 @@ func (h *HTTPServerX) ginMode() string {
 }
 func (h *HTTPServerX) ginLog() error {
 	h.log.Infof("log dir: %s", h.logDir)
-	if f, err := os.Create(h.logDir + "/gin.log"); err != nil {
+	f, err := os.Create(h.logDir + "/gin.log")
+	if err != nil {
 		return err
-	} else {
-		gin.DefaultWriter = io.MultiWriter(f)
 	}
+	h.ginLogFile = f
+	gin.DefaultWriter = io.MultiWriter(f)
 	return nil
 }
 

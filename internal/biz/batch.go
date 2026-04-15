@@ -87,6 +87,9 @@ func (b *batch) setUrl() (err error) {
 	if err != nil {
 		return
 	}
+	if err = validateURL(uri); err != nil {
+		return
+	}
 	urlP, err := url.Parse(uri)
 	if err != nil {
 		return

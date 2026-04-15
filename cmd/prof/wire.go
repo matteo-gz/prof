@@ -11,7 +11,7 @@ import (
 	"github.com/matteo-gz/prof/internal/data"
 	"github.com/matteo-gz/prof/internal/server"
 	"github.com/matteo-gz/prof/internal/service"
-	"github.com/matteo-gz/prof/pkg/appx"
+	"github.com/matteo-gz/prof/internal/appx"
 )
 
 func wireApp(*conf.Bs, *conf.Server, *conf.Data, log.Logger) (*appx.App, func(), error) {

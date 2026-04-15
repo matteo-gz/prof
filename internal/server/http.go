@@ -3,20 +3,23 @@ package server
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"os"
+	"sync"
+
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/matteo-gz/prof/internal/conf"
 	"github.com/matteo-gz/prof/internal/service"
-	"net/http"
-	"sync"
 )
 
 type HTTPServerX struct {
-	env    string
-	logDir string
-	hs     *http.Server
-	hs2    *http.Server
-	log    *log.Helper
-	srv    *service.Service
+	env        string
+	logDir     string
+	hs         *http.Server
+	hs2        *http.Server
+	log        *log.Helper
+	srv        *service.Service
+	ginLogFile *os.File
 }
 
 func (h *HTTPServerX) Start(ctx context.Context) error {
@@ -61,17 +64,20 @@ func (h *HTTPServerX) Start(ctx context.Context) error {
 }
 func (h *HTTPServerX) Stop(ctx context.Context) error {
 	h.log.Info("stop now")
+	if h.ginLogFile != nil {
+		h.ginLogFile.Close()
+	}
 	err := h.hs.Shutdown(ctx)
 	err2 := h.hs2.Shutdown(ctx)
 	if err != nil {
 		return err
 	}
 	if err2 != nil {
-		return err
+		return err2
 	}
 	return nil
 }
-func NewHTTPServer(c *conf.Bs, srv *service.Service, logger log.Logger) InterFace {
+func NewHTTPServer(c *conf.Bs, srv *service.Service, logger log.Logger) Interface {
 	hs := &http.Server{
 		Addr: fmt.Sprintf(":%s", c.Server.Port),
 	}

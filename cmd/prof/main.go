@@ -6,7 +6,7 @@ import (
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/matteo-gz/prof/internal/conf"
 	"github.com/matteo-gz/prof/internal/server"
-	"github.com/matteo-gz/prof/pkg/appx"
+	"github.com/matteo-gz/prof/internal/appx"
 	"github.com/matteo-gz/prof/pkg/logx"
 )
 
@@ -49,6 +49,6 @@ func main() {
 		panic(err2)
 	}
 }
-func newApp(logger log.Logger, hsx server.InterFace) *appx.App {
+func newApp(logger log.Logger, hsx server.Interface) *appx.App {
 	return appx.New(logger, hsx)
 }

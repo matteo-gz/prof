@@ -4,16 +4,18 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
+	"html/template"
+	"net/http"
+	"net/url"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/matteo-gz/prof/internal/biz"
 	"github.com/matteo-gz/prof/internal/conf"
 	"github.com/matteo-gz/prof/pkg/pproftype"
-	"html/template"
-	"io/ioutil"
-	"net/http"
-	"net/url"
-	"strings"
-	"time"
 )
 
 const (
@@ -65,9 +67,22 @@ func (s *Service) FileList(c *gin.Context) {
 }
 func (s *Service) File(c *gin.Context) {
 	dir := c.Query("dir")
+	dir = filepath.Clean(dir)
+	if strings.Contains(dir, "..") {
+		c.String(http.StatusBadRequest, "invalid path")
+		return
+	}
+	absPath := s.uc.GetAbsDir(dir)
+	absPath = filepath.Clean(absPath)
+	storageRoot := filepath.Clean(s.uc.GetAbsDir("/"))
+	if !strings.HasPrefix(absPath, storageRoot) {
+		c.String(http.StatusBadRequest, "path out of range")
+		return
+	}
+
 	ext := s.uc.GetFileType(dir)
 	if ext == pproftype.ExtTxt {
-		data, err := ioutil.ReadFile(s.uc.GetAbsDir(dir))
+		data, err := os.ReadFile(absPath)
 		if err != nil {
 			c.String(http.StatusOK, err.Error())
 			return
@@ -137,13 +152,13 @@ func (s *Service) Upload(c *gin.Context) {
 		c.String(http.StatusBadRequest, err.Error())
 		return
 	}
-	s1, err := s.uc.DealUpload(file, header.Filename)
+	relativePath, err := s.uc.DealUpload(file, header.Filename)
 	if err != nil {
 		c.String(http.StatusBadRequest, err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"res": []string{htmlStr(s1)},
+		"res": []string{htmlStr(relativePath)},
 		"id":  time.Now().UnixMilli(),
 	})
 }
