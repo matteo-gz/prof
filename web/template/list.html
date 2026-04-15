@@ -3,36 +3,89 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Prof - Files</title>
     <link href="/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+    <style>
+        body { background-color: #f8f9fa; }
+        .navbar-brand { font-weight: 600; letter-spacing: 0.5px; }
+        .file-item:hover { background-color: #f1f3f5; }
+        .file-icon { display: inline-block; width: 1.5em; text-align: center; }
+    </style>
 </head>
 <body>
-<div class="container">
-    <ul class="nav">
-        <li class="nav-item">
-            <a class="nav-link" href="/">Home</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link disabled" href="/history">file list</a>
-        </li>
-    </ul>
-    <div class="row">
-        <a href="#" onclick="window.history.go(-1)">{{.dir}}</a>
+
+<nav class="navbar navbar-expand navbar-light bg-white border-bottom mb-4">
+    <div class="container">
+        <a class="navbar-brand" href="/">Prof</a>
+        <ul class="navbar-nav">
+            <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+            <li class="nav-item"><a class="nav-link active" href="/history">Files</a></li>
+            <li class="nav-item"><a class="nav-link" href="/person/curl">History</a></li>
+        </ul>
     </div>
-    <div class="row">
-        <ol class="list-group list-group-flush">
-            {{$dir := .dir}}
+</nav>
+
+<div class="container py-2">
+    {{$dir := .dir}}
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb bg-white px-3 py-2 rounded border" id="bc">
+            <li class="breadcrumb-item"><a href="/history">storage</a></li>
+        </ol>
+    </nav>
+
+    {{if .list}}
+    <div class="card mb-3">
+        <div class="card-header py-2 small text-muted">Directories</div>
+        <ul class="list-group list-group-flush">
             {{range $_ := .list}}
-            <li><a href="/history?dir={{$dir}}/{{.}}">{{.}}</a></li>
+            <li class="list-group-item file-item py-2">
+                <span class="file-icon">&#128193;</span>
+                <a href="/history?dir={{$dir}}/{{.}}">{{.}}</a>
+            </li>
             {{end}}
-        </ol>
+        </ul>
     </div>
-    <div class="row">
-        <ol class="list-group list-group-flush">
+    {{end}}
+
+    {{if .files}}
+    <div class="card">
+        <div class="card-header py-2 small text-muted">Files</div>
+        <ul class="list-group list-group-flush">
             {{range $_ := .files}}
-            <li><a target="_blank" href="/file?dir={{$dir}}/{{.}}">{{.}}</a></li>
+            <li class="list-group-item file-item py-2">
+                <span class="file-icon">&#128196;</span>
+                <a target="_blank" href="/file?dir={{$dir}}/{{.}}">{{.}}</a>
+            </li>
             {{end}}
-        </ol>
+        </ul>
     </div>
+    {{end}}
 </div>
+
+<script>
+    (function () {
+        var dir = "{{$dir}}";
+        if (!dir) return;
+        var parts = dir.replace(/^\/+/, "").split("/");
+        var bc = document.getElementById("bc");
+        var path = "";
+        for (var i = 0; i < parts.length; i++) {
+            if (!parts[i]) continue;
+            path += "/" + parts[i];
+            var li = document.createElement("li");
+            li.className = "breadcrumb-item";
+            if (i === parts.length - 1) {
+                li.className += " active";
+                li.textContent = parts[i];
+            } else {
+                var a = document.createElement("a");
+                a.href = "/history?dir=" + path;
+                a.textContent = parts[i];
+                li.appendChild(a);
+            }
+            bc.appendChild(li);
+        }
+    })();
+</script>
 </body>
 </html>

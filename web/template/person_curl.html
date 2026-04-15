@@ -3,37 +3,46 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>prof</title>
+    <title>Prof - History</title>
     <link href="/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+    <style>
+        body { background-color: #f8f9fa; }
+        .navbar-brand { font-weight: 600; letter-spacing: 0.5px; }
+        .history-card { transition: box-shadow 0.15s; }
+        .history-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    </style>
 </head>
 <body>
-<div class="container">
-    <ul class="nav">
-        <li class="nav-item">
-            <a class="nav-link" href="/">Home</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link disabled">person</a>
-        </li>
-    </ul>
-    <div class="row">
-        <div class="col">
-            <button class="btn btn-primary" type="button" id="clear">clear all</button>
-        </div>
+
+<nav class="navbar navbar-expand navbar-light bg-white border-bottom mb-4">
+    <div class="container">
+        <a class="navbar-brand" href="/">Prof</a>
+        <ul class="navbar-nav me-auto">
+            <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+            <li class="nav-item"><a class="nav-link" href="/history">Files</a></li>
+            <li class="nav-item"><a class="nav-link active" href="/person/curl">History</a></li>
+        </ul>
+        <button class="btn btn-outline-danger btn-sm" type="button" id="clear" style="display:none;">Clear All</button>
     </div>
-    <div class="row">
-        <div class="col">
-            <div id="result3"></div>
-        </div>
-    </div>
+</nav>
+
+<div class="container py-2">
+    <div id="result3"></div>
 </div>
 
 <script>
     var STORAGE_KEY = "prof:history";
     var resultEl = document.querySelector("#result3");
+    var clearBtn = document.querySelector("#clear");
+
+    function badgeClass(act) {
+        if (act === "curl batch") return "bg-primary";
+        if (act === "curl one") return "bg-info text-dark";
+        return "bg-success";
+    }
 
     function deleteStore(index) {
-        if (confirm("wanna delete?")) {
+        if (confirm("Delete this entry?")) {
             localStorage.removeItem("prof:" + index);
             var ids = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
             ids = ids.filter(function (id) { return id !== index; });
@@ -51,8 +60,21 @@
         a = a.slice().reverse();
 
         resultEl.textContent = "";
-        var container = document.createElement("div");
-        var ol = document.createElement("ol");
+        clearBtn.style.display = a.length > 0 ? "" : "none";
+
+        if (a.length === 0) {
+            var empty = document.createElement("div");
+            empty.className = "text-center text-muted py-5";
+            var msg = document.createElement("p");
+            msg.className = "mb-1";
+            msg.textContent = "No history yet";
+            var sub = document.createElement("small");
+            sub.textContent = "Results from Fetch and Upload will appear here";
+            empty.appendChild(msg);
+            empty.appendChild(sub);
+            resultEl.appendChild(empty);
+            return;
+        }
 
         for (var i = 0; i < a.length; i++) {
             var raw = localStorage.getItem("prof:" + a[i]);
@@ -60,57 +82,69 @@
             var obj;
             try { obj = JSON.parse(raw); } catch(e) { continue; }
 
-            var li = document.createElement("li");
-            var span = document.createElement("span");
+            var card = document.createElement("div");
+            card.className = "card history-card mb-3";
 
-            var btn = document.createElement("button");
-            btn.type = "button";
-            btn.textContent = "delete->" + obj.index;
+            var header = document.createElement("div");
+            header.className = "card-header d-flex justify-content-between align-items-center py-2";
+
+            var left = document.createElement("span");
+            var badge = document.createElement("span");
+            badge.className = "badge " + badgeClass(obj.act) + " me-2";
+            badge.textContent = obj.act;
+            left.appendChild(badge);
+            var time = document.createElement("small");
+            time.className = "text-muted";
+            time.textContent = obj.now || "";
+            left.appendChild(time);
+            header.appendChild(left);
+
+            var delBtn = document.createElement("button");
+            delBtn.type = "button";
+            delBtn.className = "btn btn-outline-danger btn-sm py-0 px-2";
+            delBtn.textContent = "Delete";
             (function (idx) {
-                btn.addEventListener("click", function () { deleteStore(idx); });
+                delBtn.addEventListener("click", function () { deleteStore(idx); });
             })(obj.index);
-            span.appendChild(btn);
+            header.appendChild(delBtn);
+            card.appendChild(header);
 
-            var timeDiv = document.createElement("div");
-            timeDiv.textContent = obj.now;
-            span.appendChild(timeDiv);
-
-            var actDiv = document.createElement("div");
-            actDiv.textContent = "act: " + obj.act;
-            span.appendChild(actDiv);
-
-            var nameDiv = document.createElement("div");
-            nameDiv.textContent = "name: " + obj.name;
-            span.appendChild(nameDiv);
+            var body = document.createElement("div");
+            body.className = "card-body py-2";
+            var nameEl = document.createElement("div");
+            nameEl.className = "small text-muted mb-1";
+            nameEl.textContent = obj.name || "";
+            body.appendChild(nameEl);
 
             var paths = obj.paths || [];
             if (paths.length > 0) {
-                var pathOl = document.createElement("ol");
+                var ul = document.createElement("ul");
+                ul.className = "list-group list-group-flush";
                 for (var j = 0; j < paths.length; j++) {
-                    var pathLi = document.createElement("li");
+                    var li = document.createElement("li");
+                    li.className = "list-group-item px-0 py-1 border-0";
                     var link = document.createElement("a");
                     link.target = "_blank";
                     link.href = "/file?dir=/" + encodeURIComponent(paths[j]);
                     link.textContent = paths[j];
-                    pathLi.appendChild(link);
-                    pathOl.appendChild(pathLi);
+                    li.appendChild(link);
+                    ul.appendChild(li);
                 }
-                span.appendChild(pathOl);
+                body.appendChild(ul);
             } else if (obj.data) {
-                var legacyDiv = document.createElement("div");
-                legacyDiv.textContent = "(legacy entry)";
-                span.appendChild(legacyDiv);
+                var legacy = document.createElement("small");
+                legacy.className = "text-muted";
+                legacy.textContent = "(legacy entry)";
+                body.appendChild(legacy);
             }
 
-            li.appendChild(span);
-            ol.appendChild(li);
+            card.appendChild(body);
+            resultEl.appendChild(card);
         }
-        container.appendChild(ol);
-        resultEl.appendChild(container);
     }
 
     function clearAll() {
-        if (confirm("wanna delete?")) {
+        if (confirm("Clear all history?")) {
             var ids = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
             for (var i = 0; i < ids.length; i++) {
                 localStorage.removeItem("prof:" + ids[i]);
@@ -121,7 +155,7 @@
     }
 
     loadStore();
-    document.querySelector("#clear").addEventListener("click", clearAll);
+    clearBtn.addEventListener("click", clearAll);
 </script>
 </body>
 </html>

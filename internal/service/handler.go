@@ -26,7 +26,10 @@ const (
 func (s *Service) Index(c *gin.Context) {
 	c.Header("Content-Type", "text/html; charset=utf-8")
 	var buf bytes.Buffer
-	if err := s.tmpl.ExecuteTemplate(&buf, "index.html", nil); err != nil {
+	data := map[string]string{
+		"Port2": s.port2,
+	}
+	if err := s.tmpl.ExecuteTemplate(&buf, "index.html", data); err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}

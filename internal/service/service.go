@@ -11,19 +11,21 @@ import (
 )
 
 type Service struct {
-	uc   *biz.Usecase
-	log  *log.Helper
-	env  string
-	tmpl *template.Template
+	uc    *biz.Usecase
+	log   *log.Helper
+	env   string
+	port2 string
+	tmpl  *template.Template
 }
 
 func NewService(c *conf.Bs, uc *biz.Usecase, logger log.Logger) *Service {
 	tmpl := template.Must(template.ParseFS(web.TemplateFS, "template/*.html"))
 	return &Service{
-		env:  c.App.Env,
-		uc:   uc,
-		log:  log.NewHelper(logger),
-		tmpl: tmpl,
+		env:   c.App.Env,
+		port2: c.Server.Port2,
+		uc:    uc,
+		log:   log.NewHelper(logger),
+		tmpl:  tmpl,
 	}
 }
 

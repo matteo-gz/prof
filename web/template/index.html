@@ -3,75 +3,78 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>prof</title>
+    <title>Prof</title>
     <link href="/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+    <style>
+        body { background-color: #f8f9fa; }
+        .navbar-brand { font-weight: 600; letter-spacing: 0.5px; }
+        .card { border: 1px solid #dee2e6; }
+        .card-header { font-weight: 500; }
+        .result-area { min-height: 40px; margin-top: 12px; }
+    </style>
 </head>
 <body>
-<div class="container">
-    <ul class="nav">
-        <li class="nav-item">
-            <a class="nav-link disabled" href="javascript:">Home</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="/history">file list</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="/person/curl">person</a>
-        </li>
-    </ul>
 
-    <div class="row">
-        <div class="col">
-            <div class="mb-3">
-                <legend>curl one</legend>
-                <div class="mb-3">
-                    <label class="form-label">url</label>
-                    <input class="form-control" name="url_one" type="text" placeholder="url">
-                    <div class="form-text">demo: http://127.0.0.1:8202/internal/debug/pprof/goroutine</div>
-                </div>
-                <button type="submit" class="btn btn-primary" id="fetchdata1">submit</button>
-                <div id="result3"></div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="mb-3">
-                <legend>upload file</legend>
-                <div class="mb-3">
-                    <label class="form-label">file</label>
-                    <input class="form-control" type="file" name="file" accept="*">
-                    <div class="form-text"></div>
-                </div>
-                <button type="submit" class="btn btn-primary" id="subf">submit</button>
-                <div id="result2"></div>
-            </div>
-        </div>
+<nav class="navbar navbar-expand navbar-light bg-white border-bottom mb-4">
+    <div class="container">
+        <a class="navbar-brand" href="/">Prof</a>
+        <ul class="navbar-nav">
+            <li class="nav-item"><a class="nav-link active" href="/">Home</a></li>
+            <li class="nav-item"><a class="nav-link" href="/history">Files</a></li>
+            <li class="nav-item"><a class="nav-link" href="/person/curl">History</a></li>
+        </ul>
     </div>
-    <div class="row">
-        <div class="col">
-            <div class="mb-3">
-                <legend>curl batch</legend>
-                <div class="mb-3">
-                    <label class="form-label">url</label>
-                    <input class="form-control" type="text" name="url" placeholder="url"/>
-                    <div class="form-text">demo: http://127.0.0.1:8202/internal/debug/pprof?seconds=2</div>
+</nav>
+
+<div class="container py-2">
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    Fetch One
+                    <button type="button" class="btn btn-outline-success btn-sm" id="tryDemoOne">Try Demo</button>
+                </div>
+                <div class="card-body">
+                    <label class="form-label">URL</label>
+                    <input class="form-control form-control-sm" name="url_one" type="text" placeholder="http://host:port/debug/pprof/goroutine">
+                    <div class="form-text">Fetch a single pprof endpoint</div>
+                    <button type="button" class="btn btn-primary btn-sm mt-3" id="fetchdata1">
+                        <span class="btn-label">Submit</span>
+                    </button>
+                    <div id="result3" class="result-area"></div>
                 </div>
             </div>
-            <button type="submit" class="btn btn-primary" id="fetchdata">submit</button>
-            <div class="p-3 mb-2 bg-light text-dark">
-                <span>http://127.0.0.1:8202/internal/debug/pprof/allocs?seconds=2</span>
-                <span>http://127.0.0.1:8202/internal/debug/pprof/block?seconds=2</span>
-                <span>http://127.0.0.1:8202/internal/debug/pprof/cmdline?seconds=2</span>
-                <span>http://127.0.0.1:8202/internal/debug/pprof/goroutine?seconds=2</span>
-                <span>http://127.0.0.1:8202/internal/debug/pprof/heap?seconds=2</span>
-                <span>http://127.0.0.1:8202/internal/debug/pprof/mutex?seconds=2</span>
-                <span>http://127.0.0.1:8202/internal/debug/pprof/threadcreate?seconds=2</span>
-                <span>http://127.0.0.1:8202/internal/debug/pprof/profile?seconds=2</span>
-                <span>http://127.0.0.1:8202/internal/debug/pprof/trace?seconds=2</span>
-                <span>http://127.0.0.1:8202/internal/debug/pprof/symbol?seconds=2</span>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header">Upload File</div>
+                <div class="card-body">
+                    <label class="form-label">File</label>
+                    <input class="form-control form-control-sm" type="file" name="file" accept="*">
+                    <div class="form-text">Upload a .pprof or .trace file</div>
+                    <button type="button" class="btn btn-primary btn-sm mt-3" id="subf">
+                        <span class="btn-label">Submit</span>
+                    </button>
+                    <div id="result2" class="result-area"></div>
+                </div>
             </div>
         </div>
-        <div class="col">
-            <div id="result"></div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    Fetch Batch
+                    <button type="button" class="btn btn-outline-success btn-sm" id="tryDemoBatch">Try Demo</button>
+                </div>
+                <div class="card-body">
+                    <label class="form-label">Base URL</label>
+                    <input class="form-control form-control-sm" type="text" name="url" placeholder="http://host:port/debug/pprof?seconds=2">
+                    <div class="form-text">Fetch all profile types at once</div>
+                    <button type="button" class="btn btn-primary btn-sm mt-3" id="fetchdata">
+                        <span class="btn-label">Submit</span>
+                    </button>
+                    <div id="result" class="result-area"></div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -81,35 +84,64 @@
     var STORAGE_KEY = "prof:history";
 
     function buildResultList(paths) {
-        var ol = document.createElement("ol");
+        var ul = document.createElement("ul");
+        ul.className = "list-group list-group-flush mt-2";
         for (var i = 0; i < paths.length; i++) {
             var li = document.createElement("li");
+            li.className = "list-group-item px-0 py-1";
             var a = document.createElement("a");
             a.target = "_blank";
             a.href = "/file?dir=/" + encodeURIComponent(paths[i]);
             a.textContent = paths[i];
             li.appendChild(a);
-            ol.appendChild(li);
+            ul.appendChild(li);
         }
-        return ol;
+        return ul;
     }
 
-    function fetchProfile(inputName, endpoint, resultEl, lockKey, actLabel) {
+    function setButtonLoading(btn, loading) {
+        var label = btn.querySelector(".btn-label");
+        if (loading) {
+            btn.disabled = true;
+            label.textContent = " Loading...";
+            var sp = document.createElement("span");
+            sp.className = "spinner-border spinner-border-sm";
+            sp.setAttribute("role", "status");
+            btn.insertBefore(sp, label);
+        } else {
+            btn.disabled = false;
+            label.textContent = "Submit";
+            var sp = btn.querySelector(".spinner-border");
+            if (sp) sp.remove();
+        }
+    }
+
+    function showError(el, msg) {
+        el.textContent = "";
+        var d = document.createElement("div");
+        d.className = "alert alert-danger py-1 px-2 mt-2 mb-0 small";
+        d.setAttribute("role", "alert");
+        d.textContent = msg;
+        el.appendChild(d);
+    }
+
+    function fetchProfile(inputName, endpoint, resultEl, lockKey, actLabel, btn) {
         if (locks[lockKey]) { return; }
 
         var u = document.querySelector('input[name="' + inputName + '"]').value;
         if (u === "") {
-            resultEl.textContent = "url not";
+            showError(resultEl, "Please enter a URL");
             return;
         }
 
         locks[lockKey] = true;
-        resultEl.textContent = "load...";
+        resultEl.textContent = "";
+        setButtonLoading(btn, true);
 
         var pass = 0;
         var itv = setInterval(function () {
             ++pass;
-            resultEl.textContent = "fetching..." + pass;
+            resultEl.textContent = "Fetching... " + pass + "s";
         }, 1000);
 
         var formdata = new FormData();
@@ -120,6 +152,7 @@
             .then(function (data) {
                 window.clearInterval(itv);
                 locks[lockKey] = false;
+                setButtonLoading(btn, false);
                 resultEl.textContent = "";
                 resultEl.appendChild(buildResultList(data.res));
                 store(data.id, data.res, u, actLabel);
@@ -128,21 +161,24 @@
             .catch(function (error) {
                 window.clearInterval(itv);
                 locks[lockKey] = false;
-                resultEl.textContent = "Error: " + error.message;
+                setButtonLoading(btn, false);
+                showError(resultEl, error.message);
             });
     }
 
     function upload() {
+        var btn = document.querySelector("#subf");
         if (locks["upload"]) { return; }
 
         var ff = document.querySelector('input[name="file"]').files[0];
         if (ff == null) {
-            resultUpload.textContent = "file empty...";
+            showError(resultUpload, "Please select a file");
             return;
         }
 
         locks["upload"] = true;
-        resultUpload.textContent = "fetching...";
+        resultUpload.textContent = "";
+        setButtonLoading(btn, true);
 
         var formdata = new FormData();
         formdata.append("file", ff, ff.name);
@@ -157,6 +193,7 @@
             })
             .then(function (data) {
                 locks["upload"] = false;
+                setButtonLoading(btn, false);
                 resultUpload.textContent = "";
                 resultUpload.appendChild(buildResultList(data.res));
                 store(data.id, data.res, ff.name, "upload");
@@ -164,7 +201,8 @@
             })
             .catch(function (error) {
                 locks["upload"] = false;
-                resultUpload.textContent = "Error: " + error.message;
+                setButtonLoading(btn, false);
+                showError(resultUpload, error.message);
             });
     }
 
@@ -198,12 +236,20 @@
     var resultOne = document.querySelector("#result3");
 
     document.querySelector("#fetchdata").addEventListener("click", function () {
-        fetchProfile("url", "/opt/run", resultBatch, "run", "curl batch");
+        fetchProfile("url", "/opt/run", resultBatch, "run", "curl batch", this);
     });
     document.querySelector("#fetchdata1").addEventListener("click", function () {
-        fetchProfile("url_one", "/opt/run1", resultOne, "run1", "curl one");
+        fetchProfile("url_one", "/opt/run1", resultOne, "run1", "curl one", this);
     });
     document.querySelector("#subf").addEventListener("click", upload);
+
+    var demoBase = "http://127.0.0.1:{{.Port2}}/internal/debug/pprof";
+    document.querySelector("#tryDemoOne").addEventListener("click", function () {
+        document.querySelector('input[name="url_one"]').value = demoBase + "/goroutine";
+    });
+    document.querySelector("#tryDemoBatch").addEventListener("click", function () {
+        document.querySelector('input[name="url"]').value = demoBase + "?seconds=2";
+    });
 </script>
 </body>
 </html>
