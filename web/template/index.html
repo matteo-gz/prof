@@ -69,7 +69,63 @@
                     <label class="form-label">Base URL</label>
                     <input class="form-control form-control-sm" type="text" name="url" placeholder="http://host:port/debug/pprof">
 
-                    <div class="mt-2 p-2 border rounded bg-light">
+                    <div class="mt-2 mb-1">
+                        <small class="text-muted d-block mb-1">场景模板</small>
+                        <div class="btn-group btn-group-sm" id="sceneTemplates">
+                            <button type="button" class="btn btn-outline-secondary" data-scene="cpu">CPU 分析</button>
+                            <button type="button" class="btn btn-outline-secondary" data-scene="mem">内存分析</button>
+                            <button type="button" class="btn btn-outline-secondary" data-scene="concurrency">并发分析</button>
+                            <button type="button" class="btn btn-outline-secondary" data-scene="all">全量采集</button>
+                        </div>
+                    </div>
+
+                    <div class="mt-1 p-2 border rounded bg-light" id="typeSelector">
+                        <small class="text-muted d-block mb-1">采集类型</small>
+                        <div class="d-flex flex-wrap gap-2">
+                            <div class="d-flex align-items-center gap-1">
+                                <small class="text-muted me-1">采样:</small>
+                                <div class="form-check form-check-inline mb-0">
+                                    <input class="form-check-input pprof-type-cb" type="checkbox" id="typeProfile" value="profile" checked>
+                                    <label class="form-check-label small" for="typeProfile">CPU Profile</label>
+                                </div>
+                                <div class="form-check form-check-inline mb-0">
+                                    <input class="form-check-input pprof-type-cb" type="checkbox" id="typeTrace" value="trace">
+                                    <label class="form-check-label small" for="typeTrace">Trace</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 mt-1">
+                            <div class="d-flex align-items-center gap-1">
+                                <small class="text-muted me-1">快照:</small>
+                                <div class="form-check form-check-inline mb-0">
+                                    <input class="form-check-input pprof-type-cb" type="checkbox" id="typeGoroutine" value="goroutine" checked>
+                                    <label class="form-check-label small" for="typeGoroutine">goroutine</label>
+                                </div>
+                                <div class="form-check form-check-inline mb-0">
+                                    <input class="form-check-input pprof-type-cb" type="checkbox" id="typeHeap" value="heap" checked>
+                                    <label class="form-check-label small" for="typeHeap">heap</label>
+                                </div>
+                                <div class="form-check form-check-inline mb-0">
+                                    <input class="form-check-input pprof-type-cb" type="checkbox" id="typeAllocs" value="allocs" checked>
+                                    <label class="form-check-label small" for="typeAllocs">allocs</label>
+                                </div>
+                                <div class="form-check form-check-inline mb-0">
+                                    <input class="form-check-input pprof-type-cb" type="checkbox" id="typeBlock" value="block">
+                                    <label class="form-check-label small" for="typeBlock">block</label>
+                                </div>
+                                <div class="form-check form-check-inline mb-0">
+                                    <input class="form-check-input pprof-type-cb" type="checkbox" id="typeMutex" value="mutex">
+                                    <label class="form-check-label small" for="typeMutex">mutex</label>
+                                </div>
+                                <div class="form-check form-check-inline mb-0">
+                                    <input class="form-check-input pprof-type-cb" type="checkbox" id="typeThreadcreate" value="threadcreate">
+                                    <label class="form-check-label small" for="typeThreadcreate">threadcreate</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-2 p-2 border rounded bg-light" id="cpuProfileSection">
                         <div class="d-flex align-items-center gap-2 mb-1">
                             <span class="badge bg-primary">CPU Profile</span>
                         </div>
@@ -79,7 +135,7 @@
                         </div>
                     </div>
 
-                    <div class="mt-2 p-2 border rounded bg-light">
+                    <div class="mt-2 p-2 border rounded bg-light" id="traceSection">
                         <div class="d-flex align-items-center gap-2 mb-1">
                             <span class="badge bg-info text-dark">Trace</span>
                             <small class="text-muted">go tool trace</small>
@@ -93,7 +149,7 @@
                         </div>
                     </div>
 
-                    <div class="mt-2 p-2 border rounded bg-light">
+                    <div class="mt-2 p-2 border rounded bg-light" id="snapshotSection">
                         <div class="d-flex align-items-center gap-2 mb-1">
                             <span class="badge bg-success">Snapshot</span>
                             <small class="text-muted">goroutine, heap, allocs, ...</small>
@@ -312,6 +368,90 @@
         traceSecondsInput.style.display = this.checked ? "" : "none";
     });
 
+    // --- Type selector logic ---
+    var scenePresets = {
+        cpu:         ["profile"],
+        mem:         ["heap", "allocs"],
+        concurrency: ["goroutine", "block", "mutex"],
+        all:         ["profile", "trace", "goroutine", "heap", "allocs", "block", "mutex", "threadcreate"]
+    };
+
+    var allTypeCbs = document.querySelectorAll(".pprof-type-cb");
+    var cpuSection = document.querySelector("#cpuProfileSection");
+    var traceSection = document.querySelector("#traceSection");
+    var snapshotSection = document.querySelector("#snapshotSection");
+    var submitBtn = document.querySelector("#fetchdata");
+    var snapshotTypes = ["goroutine", "heap", "allocs", "block", "mutex", "threadcreate"];
+
+    function getSelectedTypes() {
+        var types = [];
+        allTypeCbs.forEach(function(cb) { if (cb.checked) types.push(cb.value); });
+        return types;
+    }
+
+    function syncSections() {
+        var sel = getSelectedTypes();
+        var hasProfile = sel.indexOf("profile") !== -1;
+        var hasTrace = sel.indexOf("trace") !== -1;
+        var hasAnySnapshot = false;
+        for (var i = 0; i < snapshotTypes.length; i++) {
+            if (sel.indexOf(snapshotTypes[i]) !== -1) { hasAnySnapshot = true; break; }
+        }
+
+        cpuSection.style.opacity = hasProfile ? "" : "0.5";
+        cpuSection.style.pointerEvents = hasProfile ? "" : "none";
+
+        traceSection.style.opacity = hasTrace ? "" : "0.5";
+        traceSection.style.pointerEvents = hasTrace ? "" : "none";
+        if (hasTrace) {
+            traceCheckbox.checked = true;
+            traceCheckbox.disabled = true;
+            traceSecondsInput.style.display = "";
+        } else {
+            traceCheckbox.checked = false;
+            traceCheckbox.disabled = false;
+            traceSecondsInput.style.display = "none";
+        }
+
+        snapshotSection.style.opacity = hasAnySnapshot ? "" : "0.5";
+        snapshotSection.style.pointerEvents = hasAnySnapshot ? "" : "none";
+
+        submitBtn.disabled = sel.length === 0;
+    }
+
+    function clearSceneActive() {
+        document.querySelectorAll("#sceneTemplates button").forEach(function(b) {
+            b.classList.remove("btn-secondary");
+            b.classList.add("btn-outline-secondary");
+        });
+    }
+
+    function applyScene(name) {
+        var preset = scenePresets[name];
+        if (!preset) return;
+        allTypeCbs.forEach(function(cb) { cb.checked = preset.indexOf(cb.value) !== -1; });
+        clearSceneActive();
+        var btn = document.querySelector('#sceneTemplates button[data-scene="' + name + '"]');
+        if (btn) {
+            btn.classList.remove("btn-outline-secondary");
+            btn.classList.add("btn-secondary");
+        }
+        syncSections();
+    }
+
+    document.querySelectorAll("#sceneTemplates button").forEach(function(btn) {
+        btn.addEventListener("click", function() { applyScene(this.getAttribute("data-scene")); });
+    });
+
+    allTypeCbs.forEach(function(cb) {
+        cb.addEventListener("change", function() {
+            clearSceneActive();
+            syncSections();
+        });
+    });
+
+    syncSections();
+
     function fetchBatch(btn) {
         if (locks["run"]) { return; }
 
@@ -337,6 +477,8 @@
             resultBatch.textContent = "Fetching... " + pass + "s";
         }, 1000);
 
+        var selectedTypes = getSelectedTypes();
+
         fetch("/opt/run", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -346,7 +488,8 @@
                 snapshot_mode: snapMode,
                 delta_seconds: deltaSec,
                 trace_enabled: traceOn,
-                trace_seconds: traceSec
+                trace_seconds: traceSec,
+                types: selectedTypes
             })
         })
             .then(function (res) { return res.json(); })

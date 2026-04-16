@@ -53,4 +53,24 @@ var (
 		Mutex,
 		Threadcreate,
 	}
+
+	AllSelectableTypes = []string{
+		Profile,
+		Trace,
+		Goroutine,
+		Heap,
+		Allocs,
+		Block,
+		Mutex,
+		Threadcreate,
+	}
 )
+
+func IsValidType(name string) bool {
+	for _, v := range List {
+		if v == name {
+			return true
+		}
+	}
+	return false
+}

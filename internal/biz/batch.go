@@ -13,12 +13,13 @@ import (
 
 // BatchParams holds the structured parameters for a batch profiling run.
 type BatchParams struct {
-	URL             string `json:"url"`
-	SamplingSeconds int    `json:"sampling_seconds"`
-	SnapshotMode    string `json:"snapshot_mode"`
-	DeltaSeconds    int    `json:"delta_seconds"`
-	TraceEnabled    bool   `json:"trace_enabled"`
-	TraceSeconds    int    `json:"trace_seconds"`
+	URL             string   `json:"url"`
+	SamplingSeconds int      `json:"sampling_seconds"`
+	SnapshotMode    string   `json:"snapshot_mode"`
+	DeltaSeconds    int      `json:"delta_seconds"`
+	TraceEnabled    bool     `json:"trace_enabled"`
+	TraceSeconds    int      `json:"trace_seconds"`
+	Types           []string `json:"types"`
 }
 
 type urlTask struct {
@@ -34,6 +35,7 @@ type batch struct {
 	deltaSeconds    int
 	traceEnabled    bool
 	traceSeconds    int
+	selectedTypes   map[string]bool
 	fileList        []string
 	taskList        []urlTask
 	log             *log.Helper
@@ -52,18 +54,40 @@ func clampSeconds(v, defaultVal int) int {
 	return v
 }
 
+func buildSelectedTypes(types []string) map[string]bool {
+	if len(types) == 0 {
+		return nil
+	}
+	m := make(map[string]bool, len(types))
+	for _, t := range types {
+		if pproftype.IsValidType(t) {
+			m[t] = true
+		}
+	}
+	if len(m) == 0 {
+		return nil
+	}
+	return m
+}
+
 func newBatchFromParams(p BatchParams, log *log.Helper, denyPrivateIP bool, defaultSampling, defaultDelta, defaultTrace int) *batch {
 	mode := p.SnapshotMode
 	if mode != "delta" {
 		mode = "snapshot"
+	}
+	sel := buildSelectedTypes(p.Types)
+	traceEnabled := p.TraceEnabled
+	if sel != nil {
+		traceEnabled = sel[pproftype.Trace]
 	}
 	return &batch{
 		oriUrl:          p.URL,
 		samplingSeconds: clampSeconds(p.SamplingSeconds, defaultSampling),
 		snapshotMode:    mode,
 		deltaSeconds:    clampSeconds(p.DeltaSeconds, defaultDelta),
-		traceEnabled:    p.TraceEnabled,
+		traceEnabled:    traceEnabled,
 		traceSeconds:    clampSeconds(p.TraceSeconds, defaultTrace),
+		selectedTypes:   sel,
 		log:             log,
 		denyPrivateIP:   denyPrivateIP,
 	}
@@ -174,9 +198,17 @@ func (b *batch) setUrl() (err error) {
 
 func (b *batch) setUrlList() {
 	for _, v := range pproftype.List {
+		family := pproftype.Family(v)
+
+		if b.selectedTypes != nil && family != pproftype.FamilyMeta {
+			if !b.selectedTypes[v] {
+				continue
+			}
+		}
+
 		var u string
 		var timeout int
-		switch pproftype.Family(v) {
+		switch family {
 		case pproftype.FamilySampling:
 			u = fmt.Sprintf("%s/%s?seconds=%d", b.url, v, b.samplingSeconds)
 			timeout = b.samplingSeconds + 5
