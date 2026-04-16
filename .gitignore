@@ -5,3 +5,5 @@ storage/*
 !logs/readme.md
 *.yaml
 *.exe
+.vscode
+*.code-workspace

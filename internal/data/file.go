@@ -28,11 +28,11 @@ func newFile(dir string, logger log.Logger) (*file, error) {
 	f.log.Infof("file dir: %s", dir)
 	return f, nil
 }
-func (f *file) getRelDir(string2 string) string {
-	return strings.ReplaceAll(string2, f.dir, "")
+func (f *file) getRelDir(absPath string) string {
+	return strings.ReplaceAll(absPath, f.dir, "")
 }
-func (f *file) getAbsDir(string2 string) string {
-	return f.dir + string2
+func (f *file) getAbsDir(relPath string) string {
+	return f.dir + relPath
 }
 func getFileType(dir string) (fileType string) {
 	ext := path.Ext(dir)

@@ -7,7 +7,7 @@ import (
 
 var ProviderSet = wire.NewSet(NewHTTPServer)
 
-type InterFace interface {
+type Interface interface {
 	Start(ctx context.Context) error
 	Stop(ctx context.Context) error
 }

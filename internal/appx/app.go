@@ -11,7 +11,7 @@ import (
 )
 
 type App struct {
-	hs     server.InterFace
+	hs     server.Interface
 	logger log.Logger
 	ctx    context.Context
 }
@@ -41,7 +41,7 @@ func (app *App) sig() (err error) {
 	}
 }
 
-func New(logger log.Logger, hs server.InterFace) *App {
+func New(logger log.Logger, hs server.Interface) *App {
 	return &App{
 		hs:     hs,
 		logger: logger,

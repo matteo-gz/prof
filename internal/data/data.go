@@ -1,6 +1,8 @@
 package data
 
 import (
+	"context"
+
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/google/wire"
 	"github.com/matteo-gz/prof/internal/conf"
@@ -29,11 +31,19 @@ func NewData(c *conf.Data, logger log.Logger) (dataData *Data, cleanup func(), e
 	}
 	return
 }
+const (
+	timerInterval = 60      // seconds between timer checks
+	proxyLifetime = 60 * 30 // 30 minutes
+)
+
 func newTask(logger log.Logger) *task {
+	ctx, cancel := context.WithCancel(context.Background())
 	t := &task{
 		list:       make(map[string]*Proxy),
-		timerCheck: 60,
+		timerCheck: timerInterval,
 		log:        log.NewHelper(logger),
+		ctx:        ctx,
+		cancel:     cancel,
 	}
 	go t.Timer()
 	return t
@@ -42,7 +52,9 @@ func newProxy(dir string, l *log.Helper) *Proxy {
 	return &Proxy{
 		dir:      dir,
 		fileType: getFileType(dir),
-		lifeTime: 60 * 30, // 30 min
+		lifeTime: proxyLifetime,
 		log:      l,
+		CmdOut:   newRingBuffer(maxCmdBufSize),
+		CmdErr:   newRingBuffer(maxCmdBufSize),
 	}
 }

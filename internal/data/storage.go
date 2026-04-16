@@ -50,6 +50,7 @@ func (f *file) createFile(filename string, dir string, data []byte) (relativePat
 	if err != nil {
 		return
 	}
+	defer f1.Close()
 	if _, err = f1.Write(data); err != nil {
 		return
 	}
@@ -63,8 +64,8 @@ func checkMimeByData(data []byte, contentType string) (string, error) {
 	}
 	return checkMime(mtype.String())
 }
-func checkMime(string2 string) (string, error) {
-	mtype2 := strings.Split(string2, ";")[0]
+func checkMime(mimeStr string) (string, error) {
+	mtype2 := strings.Split(mimeStr, ";")[0]
 	t := map[string]string{
 		mimeTrace: pproftype.ExtTrace,
 		mimePprof: pproftype.ExtPprof,

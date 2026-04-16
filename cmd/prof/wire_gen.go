@@ -13,10 +13,10 @@ import (
 	"github.com/matteo-gz/prof/internal/data"
 	"github.com/matteo-gz/prof/internal/server"
 	"github.com/matteo-gz/prof/internal/service"
-	"github.com/matteo-gz/prof/pkg/appx"
+	"github.com/matteo-gz/prof/internal/appx"
 )
 
-// Injectors from wrie.go:
+// Injectors from wire.go:
 
 func wireApp(bs *conf.Bs, confServer *conf.Server, confData *conf.Data, logger log.Logger) (*appx.App, func(), error) {
 	dataData, cleanup, err := data.NewData(confData, logger)
@@ -24,10 +24,10 @@ func wireApp(bs *conf.Bs, confServer *conf.Server, confData *conf.Data, logger l
 		return nil, nil, err
 	}
 	repo := data.NewRepo(dataData, logger)
-	usecase := biz.NewUsecase(repo, logger)
+	usecase := biz.NewUsecase(repo, logger, bs.App.DenyPrivateIP, bs.App.SamplingSeconds, bs.App.DeltaSeconds, bs.App.TraceSeconds)
 	serviceService := service.NewService(bs, usecase, logger)
-	interFace := server.NewHTTPServer(bs, serviceService, logger)
-	app := newApp(logger, interFace)
+	httpServer := server.NewHTTPServer(bs, serviceService, logger)
+	app := newApp(logger, httpServer)
 	return app, func() {
 		cleanup()
 	}, nil

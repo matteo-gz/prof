@@ -6,8 +6,12 @@ import (
 )
 
 type Usecase struct {
-	repo Repo
-	log  *log.Helper
+	repo            Repo
+	log             *log.Helper
+	denyPrivateIP   bool
+	samplingSeconds int
+	deltaSeconds    int
+	traceSeconds    int
 }
 
 func (uc *Usecase) getPortByDir(enBase64Dir string) (usePort int, err error) {

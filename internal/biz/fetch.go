@@ -4,12 +4,14 @@ import (
 	"context"
 	"errors"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"time"
 )
 
-// DealRun1 run run
+const curlTimeout = 300 // 5 minutes
+
 func (uc *Usecase) DealRun1(ctx context.Context, uri string) (relativePath string, err error) {
 	uri, err = url.QueryUnescape(uri)
 	if err != nil {
@@ -18,8 +20,29 @@ func (uc *Usecase) DealRun1(ctx context.Context, uri string) (relativePath strin
 	relativePath, err = uc.curlOne(ctx, uri)
 	return
 }
+func validateURL(uri string, denyPrivateIP bool) error {
+	u, err := url.Parse(uri)
+	if err != nil {
+		return errors.New("invalid url")
+	}
+	if u.Scheme != "http" && u.Scheme != "https" {
+		return errors.New("only http/https allowed")
+	}
+	if denyPrivateIP {
+		host := u.Hostname()
+		ip := net.ParseIP(host)
+		if ip != nil && (ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast()) {
+			return errors.New("private/loopback IP not allowed")
+		}
+	}
+	return nil
+}
+
 func (uc *Usecase) curlOne(ctx context.Context, uri string) (relativePath string, err error) {
-	data, contentType, err := curlGet(ctx, uri, 60*5)
+	if err = validateURL(uri, uc.denyPrivateIP); err != nil {
+		return
+	}
+	data, contentType, err := curlGet(ctx, uri, curlTimeout)
 	if err != nil {
 		return
 	}

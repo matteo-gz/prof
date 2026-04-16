@@ -1,267 +1,530 @@
-<html>
+<!DOCTYPE html>
+<html lang="zh">
 <head>
-    <title>prof</title>
-    <link href="./bootstrap.min.css" rel="stylesheet"
-          crossorigin="anonymous">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Prof</title>
+    <link href="/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+    <style>
+        body { background-color: #f8f9fa; }
+        .navbar-brand { font-weight: 600; letter-spacing: 0.5px; }
+        .card { border: 1px solid #dee2e6; }
+        .card-header { font-weight: 500; }
+        .result-area { min-height: 40px; margin-top: 12px; }
+    </style>
 </head>
 <body>
-<div class="container">
-    <ul class="nav">
-        <li class="nav-item">
-            <a class="nav-link disabled" href="javascript:">Home</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="/history">file list</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="/person/curl">person</a>
-        </li>
-    </ul>
 
-    <div class="row">
-        <div class="col">
-            <!--    curl one-->
-            <div class="mb-3">
-                <legend>curl one</legend>
-                <div class="mb-3">
-                    <label class="form-label">url</label>
-                    <input class="form-control" name="url_one" type="text" placeholder="url">
-                    <div class="form-text">demo: http://127.0.0.1:8202/internal/debug/pprof/goroutine</div>
-                </div>
-                <button type="submit" class="btn btn-primary" id="fetchdata1">submit</button>
-                <div id="result3"></div>
-            </div>
-        </div>
-        <div class="col">
-            <!--    upload -->
-            <div class="mb-3">
-                <legend>upload file</legend>
-                <div class="mb-3">
-                    <label class="form-label">file</label>
-                    <input class="form-control" type="file" name="file" accept="*">
-                    <div class="form-text"></div>
-                </div>
-                <button type="submit" class="btn btn-primary" id="subf">submit</button>
-                <div id="result2"></div>
-            </div>
-        </div>
-
-
+<nav class="navbar navbar-expand navbar-light bg-white border-bottom mb-4">
+    <div class="container">
+        <a class="navbar-brand" href="/">Prof</a>
+        <ul class="navbar-nav">
+            <li class="nav-item"><a class="nav-link active" href="/">Home</a></li>
+            <li class="nav-item"><a class="nav-link" href="/history">Files</a></li>
+            <li class="nav-item"><a class="nav-link" href="/person/curl">History</a></li>
+        </ul>
     </div>
-    <div class="row">
-        <div class="col">
-            <!--curl batch-->
-            <div class="mb-3">
-                <legend>curl batch</legend>
-                <div class="mb-3">
-                    <label class="form-label">url</label>
-                    <input class="form-control" type="text" name="url" placeholder="url"/>
-                    <div class="form-text">demo: http://127.0.0.1:8202/internal/debug/pprof?seconds=2</div>
+</nav>
+
+<div class="container py-2">
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    Fetch One
+                    <button type="button" class="btn btn-outline-success btn-sm" id="tryDemoOne">Try Demo</button>
+                </div>
+                <div class="card-body">
+                    <label class="form-label">URL</label>
+                    <input class="form-control form-control-sm" name="url_one" type="text" placeholder="http://host:port/debug/pprof/goroutine">
+                    <div class="form-text">Fetch a single pprof endpoint</div>
+                    <button type="button" class="btn btn-primary btn-sm mt-3" id="fetchdata1">
+                        <span class="btn-label">Submit</span>
+                    </button>
+                    <div id="result3" class="result-area"></div>
                 </div>
             </div>
-            <button type="submit" class="btn btn-primary" id="fetchdata">submit</button>
-            <div class="p-3 mb-2 bg-light text-dark">
-                <span>http://127.0.0.1:8202/internal/debug/pprof/allocs?seconds=2</span>
-                <span>http://127.0.0.1:8202/internal/debug/pprof/block?seconds=2</span>
-                <span>http://127.0.0.1:8202/internal/debug/pprof/cmdline?seconds=2</span>
-                <span>http://127.0.0.1:8202/internal/debug/pprof/goroutine?seconds=2</span>
-                <span>http://127.0.0.1:8202/internal/debug/pprof/heap?seconds=2</span>
-                <span>http://127.0.0.1:8202/internal/debug/pprof/mutex?seconds=2</span>
-                <span>http://127.0.0.1:8202/internal/debug/pprof/threadcreate?seconds=2</span>
-                <span>http://127.0.0.1:8202/internal/debug/pprof/profile?seconds=2</span>
-                <span>http://127.0.0.1:8202/internal/debug/pprof/trace?seconds=2</span>
-                <span>http://127.0.0.1:8202/internal/debug/pprof/symbol?seconds=2</span>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header">Upload File</div>
+                <div class="card-body">
+                    <label class="form-label">File</label>
+                    <input class="form-control form-control-sm" type="file" name="file" accept="*">
+                    <div class="form-text">Upload a .pprof or .trace file</div>
+                    <button type="button" class="btn btn-primary btn-sm mt-3" id="subf">
+                        <span class="btn-label">Submit</span>
+                    </button>
+                    <div id="result2" class="result-area"></div>
+                </div>
             </div>
         </div>
-        <div class="col">
-            <div id="result"></div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    Fetch Batch
+                    <button type="button" class="btn btn-outline-success btn-sm" id="tryDemoBatch">Try Demo</button>
+                </div>
+                <div class="card-body">
+                    <label class="form-label">Base URL</label>
+                    <input class="form-control form-control-sm" type="text" name="url" placeholder="http://host:port/debug/pprof">
+
+                    <div class="mt-2 mb-1">
+                        <small class="text-muted d-block mb-1">场景模板</small>
+                        <div class="btn-group btn-group-sm" id="sceneTemplates">
+                            <button type="button" class="btn btn-outline-secondary" data-scene="cpu">CPU 分析</button>
+                            <button type="button" class="btn btn-outline-secondary" data-scene="mem">内存分析</button>
+                            <button type="button" class="btn btn-outline-secondary" data-scene="concurrency">并发分析</button>
+                            <button type="button" class="btn btn-outline-secondary" data-scene="all">全量采集</button>
+                        </div>
+                    </div>
+
+                    <div class="mt-1 p-2 border rounded bg-light" id="typeSelector">
+                        <small class="text-muted d-block mb-1">采集类型</small>
+                        <div class="d-flex flex-wrap gap-2">
+                            <div class="d-flex align-items-center gap-1">
+                                <small class="text-muted me-1">采样:</small>
+                                <div class="form-check form-check-inline mb-0">
+                                    <input class="form-check-input pprof-type-cb" type="checkbox" id="typeProfile" value="profile" checked>
+                                    <label class="form-check-label small" for="typeProfile">CPU Profile</label>
+                                </div>
+                                <div class="form-check form-check-inline mb-0">
+                                    <input class="form-check-input pprof-type-cb" type="checkbox" id="typeTrace" value="trace">
+                                    <label class="form-check-label small" for="typeTrace">Trace</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 mt-1">
+                            <div class="d-flex align-items-center gap-1">
+                                <small class="text-muted me-1">快照:</small>
+                                <div class="form-check form-check-inline mb-0">
+                                    <input class="form-check-input pprof-type-cb" type="checkbox" id="typeGoroutine" value="goroutine" checked>
+                                    <label class="form-check-label small" for="typeGoroutine">goroutine</label>
+                                </div>
+                                <div class="form-check form-check-inline mb-0">
+                                    <input class="form-check-input pprof-type-cb" type="checkbox" id="typeHeap" value="heap" checked>
+                                    <label class="form-check-label small" for="typeHeap">heap</label>
+                                </div>
+                                <div class="form-check form-check-inline mb-0">
+                                    <input class="form-check-input pprof-type-cb" type="checkbox" id="typeAllocs" value="allocs" checked>
+                                    <label class="form-check-label small" for="typeAllocs">allocs</label>
+                                </div>
+                                <div class="form-check form-check-inline mb-0">
+                                    <input class="form-check-input pprof-type-cb" type="checkbox" id="typeBlock" value="block">
+                                    <label class="form-check-label small" for="typeBlock">block</label>
+                                </div>
+                                <div class="form-check form-check-inline mb-0">
+                                    <input class="form-check-input pprof-type-cb" type="checkbox" id="typeMutex" value="mutex">
+                                    <label class="form-check-label small" for="typeMutex">mutex</label>
+                                </div>
+                                <div class="form-check form-check-inline mb-0">
+                                    <input class="form-check-input pprof-type-cb" type="checkbox" id="typeThreadcreate" value="threadcreate">
+                                    <label class="form-check-label small" for="typeThreadcreate">threadcreate</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-2 p-2 border rounded bg-light" id="cpuProfileSection">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="badge bg-primary">CPU Profile</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <label class="form-label mb-0 small">Seconds</label>
+                            <input class="form-control form-control-sm" type="number" name="sampling_seconds" value="{{.SamplingSeconds}}" min="1" max="180" style="width:72px">
+                        </div>
+                    </div>
+
+                    <div class="mt-2 p-2 border rounded bg-light" id="traceSection">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="badge bg-info text-dark">Trace</span>
+                            <small class="text-muted">go tool trace</small>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="form-check mb-0">
+                                <input class="form-check-input" type="checkbox" id="traceEnabled" name="trace_enabled">
+                                <label class="form-check-label small" for="traceEnabled">Enable</label>
+                            </div>
+                            <input class="form-control form-control-sm" type="number" name="trace_seconds" value="{{.TraceSeconds}}" min="1" max="180" style="width:72px;display:none" id="traceSecondsInput">
+                        </div>
+                    </div>
+
+                    <div class="mt-2 p-2 border rounded bg-light" id="snapshotSection">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="badge bg-success">Snapshot</span>
+                            <small class="text-muted">goroutine, heap, allocs, ...</small>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="form-check form-check-inline mb-0">
+                                <input class="form-check-input" type="radio" name="snapshot_mode" id="modeSnapshot" value="snapshot" checked>
+                                <label class="form-check-label small" for="modeSnapshot">Snapshot</label>
+                            </div>
+                            <div class="form-check form-check-inline mb-0">
+                                <input class="form-check-input" type="radio" name="snapshot_mode" id="modeDelta" value="delta">
+                                <label class="form-check-label small" for="modeDelta">Delta</label>
+                            </div>
+                            <input class="form-control form-control-sm" type="number" name="delta_seconds" value="{{.DeltaSeconds}}" min="1" max="180" style="width:72px;display:none" id="deltaSecondsInput">
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn btn-primary btn-sm mt-3" id="fetchdata">
+                        <span class="btn-label">Submit</span>
+                    </button>
+                    <div id="result" class="result-area"></div>
+                </div>
+            </div>
         </div>
     </div>
-
 </div>
-</body>
-
 
 <script>
-    let runlock = false;
-    let runlock2 = false;
-    let uploadlock = false;
-    let key = "id"
-    const run = function () {
-        tpl_res1.innerText = "load..."
-        let u = document.querySelector('input[name="url"]').value
-        let uaf = encodeURIComponent(u)
-        if (u === "") {
-            tpl_res1.innerText = "url not"
-            return
+    var locks = {};
+    var STORAGE_KEY = "prof:history";
+
+    function fileBadge(path) {
+        var sp = document.createElement("span");
+        sp.className = "badge me-1";
+        if (path.endsWith(".trace")) {
+            sp.className += " bg-info text-dark";
+            sp.textContent = "Trace Viewer";
+        } else if (path.endsWith(".pprof")) {
+            sp.className += " bg-primary";
+            sp.textContent = "pprof";
+        } else if (path.endsWith(".txt")) {
+            sp.className += " bg-secondary";
+            sp.textContent = "text";
+        } else {
+            return null;
         }
-        let pass = 0
-        let itv = setInterval(function () {
-            ++pass
-            tpl_res1.innerText = "fetching..." + pass
-        }, 1000);
-        if (runlock) {
-            return
-        }
-        runlock = true
-        let formdata = new FormData();
-        formdata.append("url", uaf);
-        let requestOptions = {
-            method: 'POST',
-            body: formdata,
-        }
-        fetch("/opt/run", requestOptions)
-            .then((res) => {
-                window.clearInterval(itv)
-                runlock = false
-                return res.json()
-            })
-            .then((data) => {
-                let t = "<ol>"
-                for (let i of data.res) {
-                    t += "<li>" + i + "</li>"
-                }
-                t += "</ol>"
-                tpl_res1.innerHTML = t
-                store(data.id, t, u, "curl batch")
-                document.querySelector('input[name="url"]').value = ""
-            })
-            .catch((error) => {
-                console.log(error)
-            });
-    };
-    const run1 = function () {
-        tpl_res3.innerText = "load..."
-        let u = document.querySelector('input[name="url_one"]').value
-        let uaf = encodeURIComponent(u)
-        if (u === "") {
-            tpl_res3.innerText = "url not"
-            return
-        }
-        let pass = 0
-        let itv = setInterval(function () {
-            ++pass
-            tpl_res3.innerText = "fetching..." + pass
-        }, 1000);
-        if (runlock2) {
-            return
-        }
-        runlock2 = true
-        let formdata = new FormData();
-        formdata.append("url", uaf);
-        let requestOptions = {
-            method: 'POST',
-            body: formdata,
-        }
-        fetch("/opt/run1", requestOptions)
-            .then((res) => {
-                window.clearInterval(itv)
-                runlock2 = false
-                return res.json()
-            })
-            .then((data) => {
-                let t = "<ol>"
-                for (let i of data.res) {
-                    t += "<li>" + i + "</li>"
-                }
-                t += "</ol>"
-                tpl_res3.innerHTML = t
-                store(data.id, t, u, "curl one")
-                document.querySelector('input[name="url_one"]').value = ""
-            })
-            .catch((error) => {
-                console.log(error)
-            });
-    };
-    const store = function (index, data, name, act) {
-        let res = localStorage.getItem(key)
-        let a = []
-        if (res !== null) {
-            a = JSON.parse(res)
-        }
-        a.push(index)
-        localStorage.setItem(key, JSON.stringify(a))
-        let obj = {
-            index: index,
-            data: data,
-            name: name,
-            act: act,
-            now: getNowTime(),
-        }
-        localStorage.setItem(index, JSON.stringify(obj));
+        return sp;
     }
 
-    const upload = function () {
-        let formdata = new FormData();
-        let ff = document.querySelector('input[name="file"]').files[0]
-        if (ff == null) {
-            tpl_res2.innerText = "file empty..."
+    function buildResultList(paths) {
+        var ul = document.createElement("ul");
+        ul.className = "list-group list-group-flush mt-2";
+        for (var i = 0; i < paths.length; i++) {
+            var li = document.createElement("li");
+            li.className = "list-group-item px-0 py-1";
+            var badge = fileBadge(paths[i]);
+            if (badge) li.appendChild(badge);
+            var a = document.createElement("a");
+            a.target = "_blank";
+            a.href = "/file?dir=/" + encodeURIComponent(paths[i]);
+            a.textContent = paths[i];
+            li.appendChild(a);
+            ul.appendChild(li);
+        }
+        return ul;
+    }
+
+    function setButtonLoading(btn, loading) {
+        var label = btn.querySelector(".btn-label");
+        if (loading) {
+            btn.disabled = true;
+            label.textContent = " Loading...";
+            var sp = document.createElement("span");
+            sp.className = "spinner-border spinner-border-sm";
+            sp.setAttribute("role", "status");
+            btn.insertBefore(sp, label);
+        } else {
+            btn.disabled = false;
+            label.textContent = "Submit";
+            var sp = btn.querySelector(".spinner-border");
+            if (sp) sp.remove();
+        }
+    }
+
+    function showError(el, msg) {
+        el.textContent = "";
+        var d = document.createElement("div");
+        d.className = "alert alert-danger py-1 px-2 mt-2 mb-0 small";
+        d.setAttribute("role", "alert");
+        d.textContent = msg;
+        el.appendChild(d);
+    }
+
+    function fetchProfile(inputName, endpoint, resultEl, lockKey, actLabel, btn) {
+        if (locks[lockKey]) { return; }
+
+        var u = document.querySelector('input[name="' + inputName + '"]').value;
+        if (u === "") {
+            showError(resultEl, "Please enter a URL");
             return;
         }
-        tpl_res2.innerText = "load..."
-        formdata.append("file", ff, ff.name);
-        let requestOptions = {
-            method: 'POST',
-            body: formdata,
-            redirect: 'follow'
-        };
-        tpl_res2.innerText = "fetching..."
 
-        if (uploadlock) {
-            return
+        locks[lockKey] = true;
+        resultEl.textContent = "";
+        setButtonLoading(btn, true);
+
+        var pass = 0;
+        var itv = setInterval(function () {
+            ++pass;
+            resultEl.textContent = "Fetching... " + pass + "s";
+        }, 1000);
+
+        var formdata = new FormData();
+        formdata.append("url", encodeURIComponent(u));
+
+        fetch(endpoint, { method: "POST", body: formdata })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                window.clearInterval(itv);
+                locks[lockKey] = false;
+                setButtonLoading(btn, false);
+                resultEl.textContent = "";
+                resultEl.appendChild(buildResultList(data.res));
+                store(data.id, data.res, u, actLabel);
+                document.querySelector('input[name="' + inputName + '"]').value = "";
+            })
+            .catch(function (error) {
+                window.clearInterval(itv);
+                locks[lockKey] = false;
+                setButtonLoading(btn, false);
+                showError(resultEl, error.message);
+            });
+    }
+
+    function upload() {
+        var btn = document.querySelector("#subf");
+        if (locks["upload"]) { return; }
+
+        var ff = document.querySelector('input[name="file"]').files[0];
+        if (ff == null) {
+            showError(resultUpload, "Please select a file");
+            return;
         }
-        uploadlock = true
 
-        fetch("/opt/upload", requestOptions)
-            .then(async (res) => {
-                uploadlock = false
+        locks["upload"] = true;
+        resultUpload.textContent = "";
+        setButtonLoading(btn, true);
+
+        var formdata = new FormData();
+        formdata.append("file", ff, ff.name);
+
+        fetch("/opt/upload", { method: "POST", body: formdata, redirect: "follow" })
+            .then(function (res) {
                 if (res.status === 200) {
-                    let data = await res.json()
-                    return data
+                    return res.json();
                 } else {
-                    let data = await res.text()
-                    console.log(data)
-                    throw new Error(data)
+                    return res.text().then(function (t) { throw new Error(t); });
                 }
             })
-            .then((data) => {
-                if (data === undefined) {
-                    return
-                }
-                let t = "<ol>"
-                for (let i of data.res) {
-                    t += "<li>" + i + "</li>"
-                }
-                t += "</ol>"
-                tpl_res2.innerHTML = t
-                store(data.id, t, ff.name, "upload")
+            .then(function (data) {
+                locks["upload"] = false;
+                setButtonLoading(btn, false);
+                resultUpload.textContent = "";
+                resultUpload.appendChild(buildResultList(data.res));
+                store(data.id, data.res, ff.name, "upload");
+                document.querySelector('input[name="file"]').value = "";
+            })
+            .catch(function (error) {
+                locks["upload"] = false;
+                setButtonLoading(btn, false);
+                showError(resultUpload, error.message);
+            });
+    }
 
-                document.querySelector('input[name="file"]').value = ""
-            }).catch(error => {
-            tpl_res2.innerHTML = error.toString()
-        });
+    function store(index, paths, name, act) {
+        var res = localStorage.getItem(STORAGE_KEY);
+        var a = [];
+        if (res !== null) {
+            try { a = JSON.parse(res); } catch(e) { a = []; }
+        }
+        a.push(index);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(a));
+        var obj = {
+            index: index,
+            paths: paths,
+            name: name,
+            act: act,
+            now: getNowTime()
+        };
+        localStorage.setItem("prof:" + index, JSON.stringify(obj));
     }
 
     function getNowTime() {
-        let date = new Date();
-        let year = date.getFullYear();
-        let month = date.getMonth() + 1;
-        let day = date.getDate();
-        let hour = date.getHours();
-        let minute = date.getMinutes();
-        let second = date.getSeconds();
-        return 'time：' + year + '-' + addZero(month) + '-' + addZero(day) + ' ' + addZero(hour) + ':' + addZero(minute) + ':' + addZero(second);
+        var d = new Date();
+        function pad(n) { return n < 10 ? "0" + n : "" + n; }
+        return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) +
+            " " + pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
     }
 
-    function addZero(s) {
-        return s < 10 ? ('0' + s) : s;
+    var resultBatch = document.querySelector("#result");
+    var resultUpload = document.querySelector("#result2");
+    var resultOne = document.querySelector("#result3");
+
+    // Snapshot mode toggle: show/hide delta seconds input
+    var deltaInput = document.querySelector("#deltaSecondsInput");
+    document.querySelectorAll('input[name="snapshot_mode"]').forEach(function (r) {
+        r.addEventListener("change", function () {
+            deltaInput.style.display = this.value === "delta" ? "" : "none";
+        });
+    });
+
+    // Trace toggle: show/hide trace seconds input
+    var traceCheckbox = document.querySelector("#traceEnabled");
+    var traceSecondsInput = document.querySelector("#traceSecondsInput");
+    traceCheckbox.addEventListener("change", function () {
+        traceSecondsInput.style.display = this.checked ? "" : "none";
+    });
+
+    // --- Type selector logic ---
+    var scenePresets = {
+        cpu:         ["profile"],
+        mem:         ["heap", "allocs"],
+        concurrency: ["goroutine", "block", "mutex"],
+        all:         ["profile", "trace", "goroutine", "heap", "allocs", "block", "mutex", "threadcreate"]
+    };
+
+    var allTypeCbs = document.querySelectorAll(".pprof-type-cb");
+    var cpuSection = document.querySelector("#cpuProfileSection");
+    var traceSection = document.querySelector("#traceSection");
+    var snapshotSection = document.querySelector("#snapshotSection");
+    var submitBtn = document.querySelector("#fetchdata");
+    var snapshotTypes = ["goroutine", "heap", "allocs", "block", "mutex", "threadcreate"];
+
+    function getSelectedTypes() {
+        var types = [];
+        allTypeCbs.forEach(function(cb) { if (cb.checked) types.push(cb.value); });
+        return types;
     }
 
-    document.querySelector('#fetchdata').addEventListener('click', run)
-    document.querySelector('#fetchdata1').addEventListener('click', run1)
-    document.querySelector('#subf').addEventListener('click', upload)
-    const tpl_res1 = document.querySelector("#result")
-    const tpl_res2 = document.querySelector("#result2")
-    const tpl_res3 = document.querySelector("#result3")
+    function syncSections() {
+        var sel = getSelectedTypes();
+        var hasProfile = sel.indexOf("profile") !== -1;
+        var hasTrace = sel.indexOf("trace") !== -1;
+        var hasAnySnapshot = false;
+        for (var i = 0; i < snapshotTypes.length; i++) {
+            if (sel.indexOf(snapshotTypes[i]) !== -1) { hasAnySnapshot = true; break; }
+        }
+
+        cpuSection.style.opacity = hasProfile ? "" : "0.5";
+        cpuSection.style.pointerEvents = hasProfile ? "" : "none";
+
+        traceSection.style.opacity = hasTrace ? "" : "0.5";
+        traceSection.style.pointerEvents = hasTrace ? "" : "none";
+        if (hasTrace) {
+            traceCheckbox.checked = true;
+            traceCheckbox.disabled = true;
+            traceSecondsInput.style.display = "";
+        } else {
+            traceCheckbox.checked = false;
+            traceCheckbox.disabled = false;
+            traceSecondsInput.style.display = "none";
+        }
+
+        snapshotSection.style.opacity = hasAnySnapshot ? "" : "0.5";
+        snapshotSection.style.pointerEvents = hasAnySnapshot ? "" : "none";
+
+        submitBtn.disabled = sel.length === 0;
+    }
+
+    function clearSceneActive() {
+        document.querySelectorAll("#sceneTemplates button").forEach(function(b) {
+            b.classList.remove("btn-secondary");
+            b.classList.add("btn-outline-secondary");
+        });
+    }
+
+    function applyScene(name) {
+        var preset = scenePresets[name];
+        if (!preset) return;
+        allTypeCbs.forEach(function(cb) { cb.checked = preset.indexOf(cb.value) !== -1; });
+        clearSceneActive();
+        var btn = document.querySelector('#sceneTemplates button[data-scene="' + name + '"]');
+        if (btn) {
+            btn.classList.remove("btn-outline-secondary");
+            btn.classList.add("btn-secondary");
+        }
+        syncSections();
+    }
+
+    document.querySelectorAll("#sceneTemplates button").forEach(function(btn) {
+        btn.addEventListener("click", function() { applyScene(this.getAttribute("data-scene")); });
+    });
+
+    allTypeCbs.forEach(function(cb) {
+        cb.addEventListener("change", function() {
+            clearSceneActive();
+            syncSections();
+        });
+    });
+
+    syncSections();
+
+    function fetchBatch(btn) {
+        if (locks["run"]) { return; }
+
+        var u = document.querySelector('input[name="url"]').value;
+        if (u === "") {
+            showError(resultBatch, "Please enter a URL");
+            return;
+        }
+
+        var sampSec = parseInt(document.querySelector('input[name="sampling_seconds"]').value) || {{.SamplingSeconds}};
+        var snapMode = document.querySelector('input[name="snapshot_mode"]:checked').value;
+        var deltaSec = parseInt(document.querySelector('input[name="delta_seconds"]').value) || {{.DeltaSeconds}};
+        var traceOn = document.querySelector("#traceEnabled").checked;
+        var traceSec = parseInt(document.querySelector('input[name="trace_seconds"]').value) || {{.TraceSeconds}};
+
+        locks["run"] = true;
+        resultBatch.textContent = "";
+        setButtonLoading(btn, true);
+
+        var pass = 0;
+        var itv = setInterval(function () {
+            ++pass;
+            resultBatch.textContent = "Fetching... " + pass + "s";
+        }, 1000);
+
+        var selectedTypes = getSelectedTypes();
+
+        fetch("/opt/run", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                url: u,
+                sampling_seconds: sampSec,
+                snapshot_mode: snapMode,
+                delta_seconds: deltaSec,
+                trace_enabled: traceOn,
+                trace_seconds: traceSec,
+                types: selectedTypes
+            })
+        })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                window.clearInterval(itv);
+                locks["run"] = false;
+                setButtonLoading(btn, false);
+                resultBatch.textContent = "";
+                resultBatch.appendChild(buildResultList(data.res));
+                store(data.id, data.res, u, "curl batch");
+                document.querySelector('input[name="url"]').value = "";
+            })
+            .catch(function (error) {
+                window.clearInterval(itv);
+                locks["run"] = false;
+                setButtonLoading(btn, false);
+                showError(resultBatch, error.message);
+            });
+    }
+
+    document.querySelector("#fetchdata").addEventListener("click", function () {
+        fetchBatch(this);
+    });
+    document.querySelector("#fetchdata1").addEventListener("click", function () {
+        fetchProfile("url_one", "/opt/run1", resultOne, "run1", "curl one", this);
+    });
+    document.querySelector("#subf").addEventListener("click", upload);
+
+    var demoBase = "http://127.0.0.1:{{.Port2}}/internal/debug/pprof";
+    document.querySelector("#tryDemoOne").addEventListener("click", function () {
+        document.querySelector('input[name="url_one"]').value = demoBase + "/goroutine";
+    });
+    document.querySelector("#tryDemoBatch").addEventListener("click", function () {
+        document.querySelector('input[name="url"]').value = demoBase;
+    });
 </script>
+</body>
 </html>
