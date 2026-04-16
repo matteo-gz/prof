@@ -50,7 +50,7 @@
     {{if .files}}
     <div class="card">
         <div class="card-header py-2 small text-muted">Files</div>
-        <ul class="list-group list-group-flush">
+        <ul class="list-group list-group-flush" id="fileList">
             {{range $_ := .files}}
             <li class="list-group-item file-item py-2">
                 <span class="file-icon">&#128196;</span>
@@ -84,6 +84,30 @@
                 li.appendChild(a);
             }
             bc.appendChild(li);
+        }
+
+        var fl = document.getElementById("fileList");
+        if (!fl) return;
+        var items = fl.querySelectorAll("li");
+        for (var j = 0; j < items.length; j++) {
+            var link = items[j].querySelector("a");
+            if (!link) continue;
+            var name = link.textContent;
+            var sp = document.createElement("span");
+            sp.className = "badge me-1";
+            if (name.endsWith(".trace")) {
+                sp.className += " bg-info text-dark";
+                sp.textContent = "Trace Viewer";
+            } else if (name.endsWith(".pprof")) {
+                sp.className += " bg-primary";
+                sp.textContent = "pprof";
+            } else if (name.endsWith(".txt")) {
+                sp.className += " bg-secondary";
+                sp.textContent = "text";
+            } else {
+                continue;
+            }
+            items[j].insertBefore(sp, link);
         }
     })();
 </script>

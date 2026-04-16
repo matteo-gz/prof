@@ -67,8 +67,50 @@
                 </div>
                 <div class="card-body">
                     <label class="form-label">Base URL</label>
-                    <input class="form-control form-control-sm" type="text" name="url" placeholder="http://host:port/debug/pprof?seconds=2">
-                    <div class="form-text">Fetch all profile types at once</div>
+                    <input class="form-control form-control-sm" type="text" name="url" placeholder="http://host:port/debug/pprof">
+
+                    <div class="mt-2 p-2 border rounded bg-light">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="badge bg-primary">CPU Profile</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <label class="form-label mb-0 small">Seconds</label>
+                            <input class="form-control form-control-sm" type="number" name="sampling_seconds" value="{{.SamplingSeconds}}" min="1" max="180" style="width:72px">
+                        </div>
+                    </div>
+
+                    <div class="mt-2 p-2 border rounded bg-light">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="badge bg-info text-dark">Trace</span>
+                            <small class="text-muted">go tool trace</small>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="form-check mb-0">
+                                <input class="form-check-input" type="checkbox" id="traceEnabled" name="trace_enabled">
+                                <label class="form-check-label small" for="traceEnabled">Enable</label>
+                            </div>
+                            <input class="form-control form-control-sm" type="number" name="trace_seconds" value="{{.TraceSeconds}}" min="1" max="180" style="width:72px;display:none" id="traceSecondsInput">
+                        </div>
+                    </div>
+
+                    <div class="mt-2 p-2 border rounded bg-light">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="badge bg-success">Snapshot</span>
+                            <small class="text-muted">goroutine, heap, allocs, ...</small>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="form-check form-check-inline mb-0">
+                                <input class="form-check-input" type="radio" name="snapshot_mode" id="modeSnapshot" value="snapshot" checked>
+                                <label class="form-check-label small" for="modeSnapshot">Snapshot</label>
+                            </div>
+                            <div class="form-check form-check-inline mb-0">
+                                <input class="form-check-input" type="radio" name="snapshot_mode" id="modeDelta" value="delta">
+                                <label class="form-check-label small" for="modeDelta">Delta</label>
+                            </div>
+                            <input class="form-control form-control-sm" type="number" name="delta_seconds" value="{{.DeltaSeconds}}" min="1" max="180" style="width:72px;display:none" id="deltaSecondsInput">
+                        </div>
+                    </div>
+
                     <button type="button" class="btn btn-primary btn-sm mt-3" id="fetchdata">
                         <span class="btn-label">Submit</span>
                     </button>
@@ -83,12 +125,32 @@
     var locks = {};
     var STORAGE_KEY = "prof:history";
 
+    function fileBadge(path) {
+        var sp = document.createElement("span");
+        sp.className = "badge me-1";
+        if (path.endsWith(".trace")) {
+            sp.className += " bg-info text-dark";
+            sp.textContent = "Trace Viewer";
+        } else if (path.endsWith(".pprof")) {
+            sp.className += " bg-primary";
+            sp.textContent = "pprof";
+        } else if (path.endsWith(".txt")) {
+            sp.className += " bg-secondary";
+            sp.textContent = "text";
+        } else {
+            return null;
+        }
+        return sp;
+    }
+
     function buildResultList(paths) {
         var ul = document.createElement("ul");
         ul.className = "list-group list-group-flush mt-2";
         for (var i = 0; i < paths.length; i++) {
             var li = document.createElement("li");
             li.className = "list-group-item px-0 py-1";
+            var badge = fileBadge(paths[i]);
+            if (badge) li.appendChild(badge);
             var a = document.createElement("a");
             a.target = "_blank";
             a.href = "/file?dir=/" + encodeURIComponent(paths[i]);
@@ -235,8 +297,78 @@
     var resultUpload = document.querySelector("#result2");
     var resultOne = document.querySelector("#result3");
 
+    // Snapshot mode toggle: show/hide delta seconds input
+    var deltaInput = document.querySelector("#deltaSecondsInput");
+    document.querySelectorAll('input[name="snapshot_mode"]').forEach(function (r) {
+        r.addEventListener("change", function () {
+            deltaInput.style.display = this.value === "delta" ? "" : "none";
+        });
+    });
+
+    // Trace toggle: show/hide trace seconds input
+    var traceCheckbox = document.querySelector("#traceEnabled");
+    var traceSecondsInput = document.querySelector("#traceSecondsInput");
+    traceCheckbox.addEventListener("change", function () {
+        traceSecondsInput.style.display = this.checked ? "" : "none";
+    });
+
+    function fetchBatch(btn) {
+        if (locks["run"]) { return; }
+
+        var u = document.querySelector('input[name="url"]').value;
+        if (u === "") {
+            showError(resultBatch, "Please enter a URL");
+            return;
+        }
+
+        var sampSec = parseInt(document.querySelector('input[name="sampling_seconds"]').value) || {{.SamplingSeconds}};
+        var snapMode = document.querySelector('input[name="snapshot_mode"]:checked').value;
+        var deltaSec = parseInt(document.querySelector('input[name="delta_seconds"]').value) || {{.DeltaSeconds}};
+        var traceOn = document.querySelector("#traceEnabled").checked;
+        var traceSec = parseInt(document.querySelector('input[name="trace_seconds"]').value) || {{.TraceSeconds}};
+
+        locks["run"] = true;
+        resultBatch.textContent = "";
+        setButtonLoading(btn, true);
+
+        var pass = 0;
+        var itv = setInterval(function () {
+            ++pass;
+            resultBatch.textContent = "Fetching... " + pass + "s";
+        }, 1000);
+
+        fetch("/opt/run", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                url: u,
+                sampling_seconds: sampSec,
+                snapshot_mode: snapMode,
+                delta_seconds: deltaSec,
+                trace_enabled: traceOn,
+                trace_seconds: traceSec
+            })
+        })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                window.clearInterval(itv);
+                locks["run"] = false;
+                setButtonLoading(btn, false);
+                resultBatch.textContent = "";
+                resultBatch.appendChild(buildResultList(data.res));
+                store(data.id, data.res, u, "curl batch");
+                document.querySelector('input[name="url"]').value = "";
+            })
+            .catch(function (error) {
+                window.clearInterval(itv);
+                locks["run"] = false;
+                setButtonLoading(btn, false);
+                showError(resultBatch, error.message);
+            });
+    }
+
     document.querySelector("#fetchdata").addEventListener("click", function () {
-        fetchProfile("url", "/opt/run", resultBatch, "run", "curl batch", this);
+        fetchBatch(this);
     });
     document.querySelector("#fetchdata1").addEventListener("click", function () {
         fetchProfile("url_one", "/opt/run1", resultOne, "run1", "curl one", this);
@@ -248,7 +380,7 @@
         document.querySelector('input[name="url_one"]').value = demoBase + "/goroutine";
     });
     document.querySelector("#tryDemoBatch").addEventListener("click", function () {
-        document.querySelector('input[name="url"]').value = demoBase + "?seconds=2";
+        document.querySelector('input[name="url"]').value = demoBase;
     });
 </script>
 </body>

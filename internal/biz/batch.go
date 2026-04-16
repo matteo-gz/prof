@@ -3,46 +3,99 @@ package biz
 import (
 	"context"
 	"fmt"
-	"github.com/go-kratos/kratos/v2/log"
-	"github.com/matteo-gz/prof/pkg/pproftype"
 	"net/url"
 	"strconv"
 	"sync"
+
+	"github.com/go-kratos/kratos/v2/log"
+	"github.com/matteo-gz/prof/pkg/pproftype"
 )
 
+// BatchParams holds the structured parameters for a batch profiling run.
+type BatchParams struct {
+	URL             string `json:"url"`
+	SamplingSeconds int    `json:"sampling_seconds"`
+	SnapshotMode    string `json:"snapshot_mode"`
+	DeltaSeconds    int    `json:"delta_seconds"`
+	TraceEnabled    bool   `json:"trace_enabled"`
+	TraceSeconds    int    `json:"trace_seconds"`
+}
+
+type urlTask struct {
+	url     string
+	timeout int
+}
+
 type batch struct {
-	oriUrl        string
-	fileList      []string
-	seconds       int
-	url           string
-	urlList       []string
-	log           *log.Helper
-	denyPrivateIP bool
+	oriUrl          string
+	url             string
+	samplingSeconds int
+	snapshotMode    string
+	deltaSeconds    int
+	traceEnabled    bool
+	traceSeconds    int
+	fileList        []string
+	taskList        []urlTask
+	log             *log.Helper
+	denyPrivateIP   bool
 }
 
 const maxTime = 180
 
-func newBatch(url string, log *log.Helper, denyPrivateIP bool) *batch {
+func clampSeconds(v, defaultVal int) int {
+	if v <= 0 {
+		return defaultVal
+	}
+	if v > maxTime {
+		return maxTime
+	}
+	return v
+}
+
+func newBatchFromParams(p BatchParams, log *log.Helper, denyPrivateIP bool, defaultSampling, defaultDelta, defaultTrace int) *batch {
+	mode := p.SnapshotMode
+	if mode != "delta" {
+		mode = "snapshot"
+	}
 	return &batch{
-		oriUrl:        url,
-		log:           log,
-		denyPrivateIP: denyPrivateIP,
+		oriUrl:          p.URL,
+		samplingSeconds: clampSeconds(p.SamplingSeconds, defaultSampling),
+		snapshotMode:    mode,
+		deltaSeconds:    clampSeconds(p.DeltaSeconds, defaultDelta),
+		traceEnabled:    p.TraceEnabled,
+		traceSeconds:    clampSeconds(p.TraceSeconds, defaultTrace),
+		log:             log,
+		denyPrivateIP:   denyPrivateIP,
+	}
+}
+
+// newBatchLegacy creates a batch from a legacy URL containing ?seconds=N.
+func newBatchLegacy(rawURL string, log *log.Helper, denyPrivateIP bool, defaultSampling, defaultDelta, defaultTrace int) *batch {
+	return &batch{
+		oriUrl:          rawURL,
+		samplingSeconds: defaultSampling,
+		deltaSeconds:    defaultDelta,
+		traceEnabled:    false,
+		traceSeconds:    defaultTrace,
+		snapshotMode:    "snapshot",
+		log:             log,
+		denyPrivateIP:   denyPrivateIP,
 	}
 }
 
 type saveFile func(url string, contentType string, data []byte) (relativePath string, err error)
 
-func (b *batch) Start(ctx context.Context, fn saveFile) (res []cse, err error) {
+func (b *batch) Start(ctx context.Context, fn saveFile) (res []Cse, err error) {
 	if err = b.setUrl(); err != nil {
 		return
 	}
 	b.setUrlList()
 	wg := sync.WaitGroup{}
-	taskL := len(b.urlList)
+	taskL := len(b.taskList)
 	wg.Add(taskL)
-	ch := make(chan cse, taskL)
-	for _, v := range b.urlList {
-		go b.run(ctx, v, ch, &wg, fn)
+	ch := make(chan Cse, taskL)
+	for _, t := range b.taskList {
+		go b.run(ctx, t, ch, &wg, fn)
 	}
 	wg.Wait()
 	for {
@@ -55,35 +108,38 @@ func (b *batch) Start(ctx context.Context, fn saveFile) (res []cse, err error) {
 	return
 }
 
-// ces combine string error
-type cse struct {
+// Cse combines a string result and an error.
+type Cse struct {
 	S string
 	E error
 }
 
-func (b *batch) run(ctx context.Context, url string, ch chan cse, wg *sync.WaitGroup, fn saveFile) {
-	defer func() {
-		wg.Done()
-
-	}()
-	data, contentType, err := curlGet(ctx, url, b.seconds+5)
+func (b *batch) run(ctx context.Context, task urlTask, ch chan Cse, wg *sync.WaitGroup, fn saveFile) {
+	defer wg.Done()
+	data, contentType, err := curlGet(ctx, task.url, task.timeout)
 	if err != nil {
-		ch <- cse{"", err}
+		ch <- Cse{"", err}
 		return
 	}
-	relativePath, err := fn(url, contentType, data)
+	relativePath, err := fn(task.url, contentType, data)
 	if err != nil {
-		ch <- cse{"", err}
+		ch <- Cse{"", err}
 		return
 	}
-	ch <- cse{relativePath, nil}
-	return
+	ch <- Cse{relativePath, nil}
 }
 
-func (uc *Usecase) DealRun(ctx context.Context, uri string) (res []cse, err error) {
-	b := newBatch(uri, uc.log, uc.denyPrivateIP)
+func (uc *Usecase) DealRun(ctx context.Context, p BatchParams) (res []Cse, err error) {
+	b := newBatchFromParams(p, uc.log, uc.denyPrivateIP, uc.samplingSeconds, uc.deltaSeconds, uc.traceSeconds)
 	return b.Start(ctx, uc.repo.CreateFile)
 }
+
+// DealRunLegacy handles the old URL-based batch request for backward compatibility.
+func (uc *Usecase) DealRunLegacy(ctx context.Context, uri string) (res []Cse, err error) {
+	b := newBatchLegacy(uri, uc.log, uc.denyPrivateIP, uc.samplingSeconds, uc.deltaSeconds, uc.traceSeconds)
+	return b.Start(ctx, uc.repo.CreateFile)
+}
+
 func (b *batch) setUrl() (err error) {
 	uri, err := url.QueryUnescape(b.oriUrl)
 	if err != nil {
@@ -97,22 +153,51 @@ func (b *batch) setUrl() (err error) {
 		return
 	}
 	q := urlP.Query()
-	seconds := q.Get("seconds")
-	q.Del("seconds")
+
+	// Legacy path: extract seconds from URL if present and sampling/delta not yet set.
+	if seconds := q.Get("seconds"); seconds != "" {
+		q.Del("seconds")
+		if v, e := strconv.Atoi(seconds); e == nil {
+			if b.samplingSeconds <= 0 {
+				b.samplingSeconds = clampSeconds(v, 30)
+			}
+			if b.deltaSeconds <= 0 {
+				b.deltaSeconds = clampSeconds(v, 10)
+			}
+		}
+	}
+
 	urlP.RawQuery = q.Encode()
 	b.url = urlP.String()
-	if seconds == "" {
-		seconds = "1"
-	}
-	b.seconds, err = strconv.Atoi(seconds)
-	if err == nil && maxTime < b.seconds {
-		b.seconds = maxTime
-	}
 	return
 }
+
 func (b *batch) setUrlList() {
 	for _, v := range pproftype.List {
-		u := fmt.Sprintf("%s/%s?seconds=%d", b.url, v, b.seconds)
-		b.urlList = append(b.urlList, u)
+		var u string
+		var timeout int
+		switch pproftype.Family(v) {
+		case pproftype.FamilySampling:
+			u = fmt.Sprintf("%s/%s?seconds=%d", b.url, v, b.samplingSeconds)
+			timeout = b.samplingSeconds + 5
+		case pproftype.FamilyTrace:
+			if !b.traceEnabled {
+				continue
+			}
+			u = fmt.Sprintf("%s/%s?seconds=%d", b.url, v, b.traceSeconds)
+			timeout = b.traceSeconds + 5
+		case pproftype.FamilySnapshot:
+			if b.snapshotMode == "delta" {
+				u = fmt.Sprintf("%s/%s?seconds=%d", b.url, v, b.deltaSeconds)
+				timeout = b.deltaSeconds + 5
+			} else {
+				u = fmt.Sprintf("%s/%s", b.url, v)
+				timeout = 10
+			}
+		case pproftype.FamilyMeta:
+			u = fmt.Sprintf("%s/%s", b.url, v)
+			timeout = 5
+		}
+		b.taskList = append(b.taskList, urlTask{url: u, timeout: timeout})
 	}
 }

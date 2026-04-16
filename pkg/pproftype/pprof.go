@@ -18,6 +18,28 @@ const (
 	ExtUnknown = "unknown"
 )
 
+type FamilyType string
+
+const (
+	FamilySampling FamilyType = "sampling"
+	FamilyTrace    FamilyType = "trace"
+	FamilySnapshot FamilyType = "snapshot"
+	FamilyMeta     FamilyType = "meta"
+)
+
+func Family(name string) FamilyType {
+	switch name {
+	case Profile:
+		return FamilySampling
+	case Trace:
+		return FamilyTrace
+	case Cmdline, Symbol:
+		return FamilyMeta
+	default:
+		return FamilySnapshot
+	}
+}
+
 var (
 	List = []string{
 		Cmdline,

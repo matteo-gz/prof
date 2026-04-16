@@ -11,6 +11,22 @@ type Repo interface {
 	CreateFileByUpload(fileName string, data []byte) (relativePath string, err error)
 }
 
-func NewUsecase(repo Repo, logger log.Logger, denyPrivateIP bool) *Usecase {
-	return &Usecase{repo: repo, log: log.NewHelper(logger), denyPrivateIP: denyPrivateIP}
+func NewUsecase(repo Repo, logger log.Logger, denyPrivateIP bool, samplingSeconds, deltaSeconds, traceSeconds int) *Usecase {
+	if samplingSeconds <= 0 {
+		samplingSeconds = 30
+	}
+	if deltaSeconds <= 0 {
+		deltaSeconds = 10
+	}
+	if traceSeconds <= 0 {
+		traceSeconds = 5
+	}
+	return &Usecase{
+		repo:            repo,
+		log:             log.NewHelper(logger),
+		denyPrivateIP:   denyPrivateIP,
+		samplingSeconds: samplingSeconds,
+		deltaSeconds:    deltaSeconds,
+		traceSeconds:    traceSeconds,
+	}
 }

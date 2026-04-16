@@ -26,8 +26,11 @@ const (
 func (s *Service) Index(c *gin.Context) {
 	c.Header("Content-Type", "text/html; charset=utf-8")
 	var buf bytes.Buffer
-	data := map[string]string{
-		"Port2": s.port2,
+	data := map[string]any{
+		"Port2":           s.port2,
+		"SamplingSeconds": s.samplingSeconds,
+		"DeltaSeconds":    s.deltaSeconds,
+		"TraceSeconds":    s.traceSeconds,
 	}
 	if err := s.tmpl.ExecuteTemplate(&buf, "index.html", data); err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
@@ -173,12 +176,26 @@ func (s *Service) Upload(c *gin.Context) {
 }
 
 func (s *Service) Run(c *gin.Context) {
-	uri := c.PostForm("url")
-	res, err := s.uc.DealRun(c.Request.Context(), uri)
+	ctx := c.Request.Context()
+	ct := c.ContentType()
+
+	var res []biz.Cse
+	var err error
+
+	if strings.Contains(ct, "application/json") {
+		var p biz.BatchParams
+		if err = c.ShouldBindJSON(&p); err != nil {
+			c.JSON(200, gin.H{"res": []string{"invalid json: " + err.Error()}})
+			return
+		}
+		res, err = s.uc.DealRun(ctx, p)
+	} else {
+		uri := c.PostForm("url")
+		res, err = s.uc.DealRunLegacy(ctx, uri)
+	}
+
 	if err != nil {
-		c.JSON(200, gin.H{
-			"res": []string{err.Error()},
-		})
+		c.JSON(200, gin.H{"res": []string{err.Error()}})
 		return
 	}
 	var res2 []string
