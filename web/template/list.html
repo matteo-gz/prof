@@ -52,9 +52,10 @@
         <div class="card-header py-2 small text-muted">Files</div>
         <ul class="list-group list-group-flush" id="fileList">
             {{range $_ := .files}}
-            <li class="list-group-item file-item py-2">
+            <li class="list-group-item file-item py-2 d-flex align-items-center" data-size="{{.Size}}">
                 <span class="file-icon">&#128196;</span>
-                <a target="_blank" href="/file?dir={{$dir}}/{{.}}">{{.}}</a>
+                <a target="_blank" href="/file?dir={{$dir}}/{{.Name}}">{{.Name}}</a>
+                <span class="text-muted small ms-auto file-size"></span>
             </li>
             {{end}}
         </ul>
@@ -63,6 +64,55 @@
 </div>
 
 <script>
+    function formatSize(bytes) {
+        if (!bytes || bytes <= 0) return "";
+        if (bytes < 1024) return bytes + " B";
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+        return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+    }
+
+    function fileBadge(name) {
+        var sp = document.createElement("span");
+        sp.className = "badge me-1";
+        var base = name.replace(/\.[^.]+$/, "");
+        if (name.endsWith(".trace")) {
+            sp.className += " bg-info text-dark";
+            sp.textContent = "Trace";
+        } else if (name.endsWith(".pprof")) {
+            if (base === "profile") {
+                sp.className += " bg-danger";
+                sp.textContent = "CPU Profile";
+            } else if (base === "goroutine") {
+                sp.className += " bg-warning text-dark";
+                sp.textContent = "Goroutine";
+            } else if (base === "heap") {
+                sp.className += " bg-success";
+                sp.textContent = "Heap";
+            } else if (base === "allocs") {
+                sp.className += " bg-success";
+                sp.textContent = "Allocs";
+            } else if (base === "block") {
+                sp.className += " bg-secondary";
+                sp.textContent = "Block";
+            } else if (base === "mutex") {
+                sp.className += " bg-secondary";
+                sp.textContent = "Mutex";
+            } else if (base === "threadcreate") {
+                sp.className += " bg-secondary";
+                sp.textContent = "Thread";
+            } else {
+                sp.className += " bg-primary";
+                sp.textContent = "pprof";
+            }
+        } else if (name.endsWith(".txt")) {
+            sp.className += " bg-light text-dark border";
+            sp.textContent = "Meta";
+        } else {
+            return null;
+        }
+        return sp;
+    }
+
     (function () {
         var dir = "{{$dir}}";
         if (!dir) return;
@@ -93,21 +143,15 @@
             var link = items[j].querySelector("a");
             if (!link) continue;
             var name = link.textContent;
-            var sp = document.createElement("span");
-            sp.className = "badge me-1";
-            if (name.endsWith(".trace")) {
-                sp.className += " bg-info text-dark";
-                sp.textContent = "Trace Viewer";
-            } else if (name.endsWith(".pprof")) {
-                sp.className += " bg-primary";
-                sp.textContent = "pprof";
-            } else if (name.endsWith(".txt")) {
-                sp.className += " bg-secondary";
-                sp.textContent = "text";
-            } else {
-                continue;
+            var badge = fileBadge(name);
+            if (badge) items[j].insertBefore(badge, link);
+
+            var sizeEl = items[j].querySelector(".file-size");
+            if (sizeEl) {
+                var bytes = parseInt(items[j].getAttribute("data-size"), 10);
+                var sz = formatSize(bytes);
+                if (sz) sizeEl.textContent = sz;
             }
-            items[j].insertBefore(sp, link);
         }
     })();
 </script>

@@ -12,12 +12,12 @@ import (
 
 const curlTimeout = 300 // 5 minutes
 
-func (uc *Usecase) DealRun1(ctx context.Context, uri string) (relativePath string, err error) {
+func (uc *Usecase) DealRun1(ctx context.Context, uri string) (relativePath string, size int64, err error) {
 	uri, err = url.QueryUnescape(uri)
 	if err != nil {
 		return
 	}
-	relativePath, err = uc.curlOne(ctx, uri)
+	relativePath, size, err = uc.curlOne(ctx, uri)
 	return
 }
 func validateURL(uri string, denyPrivateIP bool) error {
@@ -38,7 +38,7 @@ func validateURL(uri string, denyPrivateIP bool) error {
 	return nil
 }
 
-func (uc *Usecase) curlOne(ctx context.Context, uri string) (relativePath string, err error) {
+func (uc *Usecase) curlOne(ctx context.Context, uri string) (relativePath string, size int64, err error) {
 	if err = validateURL(uri, uc.denyPrivateIP); err != nil {
 		return
 	}
@@ -46,7 +46,9 @@ func (uc *Usecase) curlOne(ctx context.Context, uri string) (relativePath string
 	if err != nil {
 		return
 	}
-	return uc.repo.CreateFile(uri, contentType, data)
+	size = int64(len(data))
+	relativePath, err = uc.repo.CreateFile(uri, contentType, data)
+	return
 }
 
 func curlGet(ctx context.Context, uri string, timeout int) (data []byte, contentType string, err error) {

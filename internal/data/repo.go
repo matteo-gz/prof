@@ -30,7 +30,7 @@ func (rp *repo) GetAbsDir(relPath string) string {
 	return rp.data.file.getAbsDir(relPath)
 }
 
-func (rp *repo) GetFileList(date string) (list, files []string, err error) {
+func (rp *repo) GetFileList(date string) (list []string, files []biz.FileInfo, err error) {
 	return rp.data.file.getFileList(date)
 }
 func (rp *repo) GetFileType(dir string) string {

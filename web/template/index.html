@@ -181,37 +181,80 @@
     var locks = {};
     var STORAGE_KEY = "prof:history";
 
-    function fileBadge(path) {
+    function formatSize(bytes) {
+        if (!bytes || bytes <= 0) return "";
+        if (bytes < 1024) return bytes + " B";
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+        return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+    }
+
+    function fileBadge(filePath) {
         var sp = document.createElement("span");
         sp.className = "badge me-1";
-        if (path.endsWith(".trace")) {
+        var name = filePath.split("/").pop();
+        var base = name.replace(/\.[^.]+$/, "");
+        if (filePath.endsWith(".trace")) {
             sp.className += " bg-info text-dark";
-            sp.textContent = "Trace Viewer";
-        } else if (path.endsWith(".pprof")) {
-            sp.className += " bg-primary";
-            sp.textContent = "pprof";
-        } else if (path.endsWith(".txt")) {
-            sp.className += " bg-secondary";
-            sp.textContent = "text";
+            sp.textContent = "Trace";
+        } else if (filePath.endsWith(".pprof")) {
+            if (base === "profile") {
+                sp.className += " bg-danger";
+                sp.textContent = "CPU Profile";
+            } else if (base === "goroutine") {
+                sp.className += " bg-warning text-dark";
+                sp.textContent = "Goroutine";
+            } else if (base === "heap") {
+                sp.className += " bg-success";
+                sp.textContent = "Heap";
+            } else if (base === "allocs") {
+                sp.className += " bg-success";
+                sp.textContent = "Allocs";
+            } else if (base === "block") {
+                sp.className += " bg-secondary";
+                sp.textContent = "Block";
+            } else if (base === "mutex") {
+                sp.className += " bg-secondary";
+                sp.textContent = "Mutex";
+            } else if (base === "threadcreate") {
+                sp.className += " bg-secondary";
+                sp.textContent = "Thread";
+            } else {
+                sp.className += " bg-primary";
+                sp.textContent = "pprof";
+            }
+        } else if (filePath.endsWith(".txt")) {
+            sp.className += " bg-light text-dark border";
+            sp.textContent = "Meta";
         } else {
             return null;
         }
         return sp;
     }
 
-    function buildResultList(paths) {
+    function buildResultList(paths, files) {
         var ul = document.createElement("ul");
         ul.className = "list-group list-group-flush mt-2";
-        for (var i = 0; i < paths.length; i++) {
+        var useFiles = files && files.length > 0;
+        var count = useFiles ? files.length : paths.length;
+        for (var i = 0; i < count; i++) {
+            var filePath = useFiles ? files[i].path : paths[i];
+            var fileSize = useFiles ? files[i].size : 0;
             var li = document.createElement("li");
-            li.className = "list-group-item px-0 py-1";
-            var badge = fileBadge(paths[i]);
+            li.className = "list-group-item px-0 py-1 d-flex align-items-center";
+            var badge = fileBadge(filePath);
             if (badge) li.appendChild(badge);
             var a = document.createElement("a");
             a.target = "_blank";
-            a.href = "/file?dir=/" + encodeURIComponent(paths[i]);
-            a.textContent = paths[i];
+            a.href = "/file?dir=/" + encodeURIComponent(filePath);
+            a.textContent = filePath;
             li.appendChild(a);
+            var sz = formatSize(fileSize);
+            if (sz) {
+                var s = document.createElement("span");
+                s.className = "text-muted small ms-auto";
+                s.textContent = sz;
+                li.appendChild(s);
+            }
             ul.appendChild(li);
         }
         return ul;
@@ -272,7 +315,7 @@
                 locks[lockKey] = false;
                 setButtonLoading(btn, false);
                 resultEl.textContent = "";
-                resultEl.appendChild(buildResultList(data.res));
+                resultEl.appendChild(buildResultList(data.res, data.files));
                 store(data.id, data.res, u, actLabel);
                 document.querySelector('input[name="' + inputName + '"]').value = "";
             })
@@ -313,7 +356,7 @@
                 locks["upload"] = false;
                 setButtonLoading(btn, false);
                 resultUpload.textContent = "";
-                resultUpload.appendChild(buildResultList(data.res));
+                resultUpload.appendChild(buildResultList(data.res, data.files));
                 store(data.id, data.res, ff.name, "upload");
                 document.querySelector('input[name="file"]').value = "";
             })
@@ -498,7 +541,7 @@
                 locks["run"] = false;
                 setButtonLoading(btn, false);
                 resultBatch.textContent = "";
-                resultBatch.appendChild(buildResultList(data.res));
+                resultBatch.appendChild(buildResultList(data.res, data.files));
                 store(data.id, data.res, u, "curl batch");
                 document.querySelector('input[name="url"]').value = "";
             })

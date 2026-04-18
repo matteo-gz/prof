@@ -199,30 +199,35 @@ func (s *Service) Run(c *gin.Context) {
 		return
 	}
 	var res2 []string
+	var files []biz.FileResult
 	for i := range res {
 		if res[i].E != nil {
 			res2 = append(res2, res[i].E.Error())
 		} else {
 			res2 = append(res2, res[i].S)
+			files = append(files, biz.FileResult{Path: res[i].S, Size: res[i].Size})
 		}
 	}
 	c.JSON(200, gin.H{
-		"id":  time.Now().UnixMilli(),
-		"res": res2,
+		"id":    time.Now().UnixMilli(),
+		"res":   res2,
+		"files": files,
 	})
 }
 
 func (s *Service) Run1(c *gin.Context) {
 	uri := c.PostForm("url")
-	relativePath, err := s.uc.DealRun1(c.Request.Context(), uri)
-	var res string
+	relativePath, size, err := s.uc.DealRun1(c.Request.Context(), uri)
 	if err != nil {
-		res = err.Error()
-	} else {
-		res = relativePath
+		c.JSON(200, gin.H{
+			"id":  time.Now().UnixMilli(),
+			"res": []string{err.Error()},
+		})
+		return
 	}
 	c.JSON(200, gin.H{
-		"id":  time.Now().UnixMilli(),
-		"res": []string{res},
+		"id":    time.Now().UnixMilli(),
+		"res":   []string{relativePath},
+		"files": []biz.FileResult{{Path: relativePath, Size: size}},
 	})
 }
