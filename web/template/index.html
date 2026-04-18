@@ -28,16 +28,39 @@
 
 <div class="container py-2">
     <div class="row g-4">
-        <div class="col-md-4">
+        <div class="col-md-6 col-lg-3">
             <div class="card h-100">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     Fetch One
                     <button type="button" class="btn btn-outline-success btn-sm" id="tryDemoOne">Try Demo</button>
                 </div>
                 <div class="card-body">
-                    <label class="form-label">URL</label>
-                    <input class="form-control form-control-sm" name="url_one" type="text" placeholder="http://host:port/debug/pprof/goroutine">
-                    <div class="form-text">Fetch a single pprof endpoint</div>
+                    <label class="form-label small mb-1">Base URL</label>
+                    <input class="form-control form-control-sm" name="base_url_one" type="text" placeholder="http://host:port/debug/pprof">
+                    <div class="form-text">不含类型名，末尾无斜杠</div>
+
+                    <div class="mt-2 d-flex align-items-center gap-2">
+                        <label class="form-label small mb-0 text-nowrap">类型</label>
+                        <select class="form-select form-select-sm" id="pprofType" name="pprof_type">
+                            <option value="goroutine">goroutine</option>
+                            <option value="heap">heap</option>
+                            <option value="allocs">allocs</option>
+                            <option value="profile">profile (CPU)</option>
+                            <option value="trace">trace</option>
+                            <option value="block">block</option>
+                            <option value="mutex">mutex</option>
+                            <option value="threadcreate">threadcreate</option>
+                            <option value="cmdline">cmdline</option>
+                            <option value="symbol">symbol</option>
+                        </select>
+                    </div>
+
+                    <div id="typeParamsOne" class="mt-2 p-2 border rounded bg-light small"></div>
+
+                    <div class="mt-2">
+                        <input class="form-control form-control-sm font-monospace" id="url_preview_one" type="text" readonly style="color:#6c757d;background:#f8f9fa" placeholder="URL 预览">
+                    </div>
+
                     <button type="button" class="btn btn-primary btn-sm mt-3" id="fetchdata1">
                         <span class="btn-label">Submit</span>
                     </button>
@@ -45,7 +68,24 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-6 col-lg-3">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    Fetch URL
+                    <button type="button" class="btn btn-outline-success btn-sm" id="tryDemoUrl">Try Demo</button>
+                </div>
+                <div class="card-body">
+                    <label class="form-label small mb-1">URL</label>
+                    <input class="form-control form-control-sm" name="url_manual" type="text" placeholder="http://host:port/debug/pprof/goroutine?debug=1">
+                    <div class="form-text">完整 URL，含类型和参数</div>
+                    <button type="button" class="btn btn-primary btn-sm mt-3" id="fetchdataManual">
+                        <span class="btn-label">Submit</span>
+                    </button>
+                    <div id="result_manual" class="result-area"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
             <div class="card h-100">
                 <div class="card-header">Upload File</div>
                 <div class="card-body">
@@ -59,7 +99,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-6 col-lg-3">
             <div class="card h-100">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     Fetch Batch
@@ -81,46 +121,42 @@
 
                     <div class="mt-1 p-2 border rounded bg-light" id="typeSelector">
                         <small class="text-muted d-block mb-1">采集类型</small>
-                        <div class="d-flex flex-wrap gap-2">
-                            <div class="d-flex align-items-center gap-1">
-                                <small class="text-muted me-1">采样:</small>
-                                <div class="form-check form-check-inline mb-0">
-                                    <input class="form-check-input pprof-type-cb" type="checkbox" id="typeProfile" value="profile" checked>
-                                    <label class="form-check-label small" for="typeProfile">CPU Profile</label>
-                                </div>
-                                <div class="form-check form-check-inline mb-0">
-                                    <input class="form-check-input pprof-type-cb" type="checkbox" id="typeTrace" value="trace">
-                                    <label class="form-check-label small" for="typeTrace">Trace</label>
-                                </div>
+                        <div class="d-flex flex-wrap align-items-center gap-1">
+                            <small class="text-muted me-1">采样:</small>
+                            <div class="form-check form-check-inline mb-0">
+                                <input class="form-check-input pprof-type-cb" type="checkbox" id="typeProfile" value="profile" checked>
+                                <label class="form-check-label small" for="typeProfile">CPU Profile</label>
+                            </div>
+                            <div class="form-check form-check-inline mb-0">
+                                <input class="form-check-input pprof-type-cb" type="checkbox" id="typeTrace" value="trace">
+                                <label class="form-check-label small" for="typeTrace">Trace</label>
                             </div>
                         </div>
-                        <div class="d-flex flex-wrap gap-2 mt-1">
-                            <div class="d-flex align-items-center gap-1">
-                                <small class="text-muted me-1">快照:</small>
-                                <div class="form-check form-check-inline mb-0">
-                                    <input class="form-check-input pprof-type-cb" type="checkbox" id="typeGoroutine" value="goroutine" checked>
-                                    <label class="form-check-label small" for="typeGoroutine">goroutine</label>
-                                </div>
-                                <div class="form-check form-check-inline mb-0">
-                                    <input class="form-check-input pprof-type-cb" type="checkbox" id="typeHeap" value="heap" checked>
-                                    <label class="form-check-label small" for="typeHeap">heap</label>
-                                </div>
-                                <div class="form-check form-check-inline mb-0">
-                                    <input class="form-check-input pprof-type-cb" type="checkbox" id="typeAllocs" value="allocs" checked>
-                                    <label class="form-check-label small" for="typeAllocs">allocs</label>
-                                </div>
-                                <div class="form-check form-check-inline mb-0">
-                                    <input class="form-check-input pprof-type-cb" type="checkbox" id="typeBlock" value="block">
-                                    <label class="form-check-label small" for="typeBlock">block</label>
-                                </div>
-                                <div class="form-check form-check-inline mb-0">
-                                    <input class="form-check-input pprof-type-cb" type="checkbox" id="typeMutex" value="mutex">
-                                    <label class="form-check-label small" for="typeMutex">mutex</label>
-                                </div>
-                                <div class="form-check form-check-inline mb-0">
-                                    <input class="form-check-input pprof-type-cb" type="checkbox" id="typeThreadcreate" value="threadcreate">
-                                    <label class="form-check-label small" for="typeThreadcreate">threadcreate</label>
-                                </div>
+                        <div class="d-flex flex-wrap align-items-center gap-1 mt-1">
+                            <small class="text-muted me-1">快照:</small>
+                            <div class="form-check form-check-inline mb-0">
+                                <input class="form-check-input pprof-type-cb" type="checkbox" id="typeGoroutine" value="goroutine" checked>
+                                <label class="form-check-label small" for="typeGoroutine">goroutine</label>
+                            </div>
+                            <div class="form-check form-check-inline mb-0">
+                                <input class="form-check-input pprof-type-cb" type="checkbox" id="typeHeap" value="heap" checked>
+                                <label class="form-check-label small" for="typeHeap">heap</label>
+                            </div>
+                            <div class="form-check form-check-inline mb-0">
+                                <input class="form-check-input pprof-type-cb" type="checkbox" id="typeAllocs" value="allocs" checked>
+                                <label class="form-check-label small" for="typeAllocs">allocs</label>
+                            </div>
+                            <div class="form-check form-check-inline mb-0">
+                                <input class="form-check-input pprof-type-cb" type="checkbox" id="typeBlock" value="block">
+                                <label class="form-check-label small" for="typeBlock">block</label>
+                            </div>
+                            <div class="form-check form-check-inline mb-0">
+                                <input class="form-check-input pprof-type-cb" type="checkbox" id="typeMutex" value="mutex">
+                                <label class="form-check-label small" for="typeMutex">mutex</label>
+                            </div>
+                            <div class="form-check form-check-inline mb-0">
+                                <input class="form-check-input pprof-type-cb" type="checkbox" id="typeThreadcreate" value="threadcreate">
+                                <label class="form-check-label small" for="typeThreadcreate">threadcreate</label>
                             </div>
                         </div>
                     </div>
@@ -318,6 +354,43 @@
                 resultEl.appendChild(buildResultList(data.res, data.files));
                 store(data.id, data.res, u, actLabel);
                 document.querySelector('input[name="' + inputName + '"]').value = "";
+            })
+            .catch(function (error) {
+                window.clearInterval(itv);
+                locks[lockKey] = false;
+                setButtonLoading(btn, false);
+                showError(resultEl, error.message);
+            });
+    }
+
+    function fetchProfileFromUrl(u, endpoint, resultEl, lockKey, actLabel, btn) {
+        if (locks[lockKey]) { return; }
+        if (!u) {
+            showError(resultEl, "Please enter a URL");
+            return;
+        }
+        locks[lockKey] = true;
+        resultEl.textContent = "";
+        setButtonLoading(btn, true);
+
+        var pass = 0;
+        var itv = setInterval(function () {
+            ++pass;
+            resultEl.textContent = "Fetching... " + pass + "s";
+        }, 1000);
+
+        var formdata = new FormData();
+        formdata.append("url", encodeURIComponent(u));
+
+        fetch(endpoint, { method: "POST", body: formdata })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                window.clearInterval(itv);
+                locks[lockKey] = false;
+                setButtonLoading(btn, false);
+                resultEl.textContent = "";
+                resultEl.appendChild(buildResultList(data.res, data.files));
+                store(data.id, data.res, u, actLabel);
             })
             .catch(function (error) {
                 window.clearInterval(itv);
@@ -557,13 +630,196 @@
         fetchBatch(this);
     });
     document.querySelector("#fetchdata1").addEventListener("click", function () {
-        fetchProfile("url_one", "/opt/run1", resultOne, "run1", "curl one", this);
+        var u = buildOneUrl();
+        if (!u || u.endsWith("/")) {
+            showError(resultOne, "Please enter a Base URL");
+            return;
+        }
+        fetchProfileFromUrl(u, "/opt/run1", resultOne, "run1", "curl one", this);
     });
     document.querySelector("#subf").addEventListener("click", upload);
 
+    // --- Fetch One: type-aware panel ---
+    var oneTypeParams = document.querySelector("#typeParamsOne");
+    var oneUrlPreview = document.querySelector("#url_preview_one");
+    var oneTypeSelect = document.querySelector("#pprofType");
+    var oneBaseInput  = document.querySelector('input[name="base_url_one"]');
+
+    var oneTypeHTML = {
+        goroutine: [
+            '<div class="mb-1 fw-semibold">输出模式</div>',
+            '<div class="form-check"><input class="form-check-input" type="radio" name="goroutine_mode" id="g_pprof" value="" checked>',
+            '<label class="form-check-label" for="g_pprof">pprof 格式 <span class="text-muted">— goroutine（flame graph）</span></label></div>',
+            '<div class="form-check"><input class="form-check-input" type="radio" name="goroutine_mode" id="g_debug1" value="debug=1">',
+            '<label class="form-check-label" for="g_debug1">文本摘要 <span class="text-muted">— goroutine?debug=1（总数 + 栈分布）</span></label></div>',
+            '<div class="form-check"><input class="form-check-input" type="radio" name="goroutine_mode" id="g_debug2" value="debug=2">',
+            '<label class="form-check-label" for="g_debug2">完整 dump <span class="badge bg-warning text-dark ms-1">⚠ STW</span> <span class="text-muted">— goroutine?debug=2</span></label></div>',
+            '<div class="text-danger mt-1" id="goroutineStw" style="display:none">⚠️ 会触发 Stop-The-World，goroutine 数量大时请谨慎</div>'
+        ].join(""),
+
+        heap: [
+            '<div class="mb-1 fw-semibold">采集模式</div>',
+            '<div class="form-check"><input class="form-check-input" type="radio" name="heap_mode" id="h_snap" value="" checked>',
+            '<label class="form-check-label" for="h_snap">快照 <span class="text-muted">— heap（当前堆内存）</span></label></div>',
+            '<div class="form-check"><input class="form-check-input" type="radio" name="heap_mode" id="h_gc" value="gc=1">',
+            '<label class="form-check-label" for="h_gc">GC 后快照 <span class="text-muted">— heap?gc=1（真实存活对象，更准确）</span></label></div>',
+            '<div class="d-flex align-items-center gap-2 mt-1">',
+            '<input class="form-check-input flex-shrink-0" type="radio" name="heap_mode" id="h_delta" value="seconds=">',
+            '<label class="form-check-label me-1" for="h_delta">Delta</label>',
+            '<input type="number" id="heapDeltaSec" value="30" min="1" max="180" class="form-control form-control-sm" style="width:60px">',
+            '<span class="text-muted">秒 — heap?seconds=N</span></div>'
+        ].join(""),
+
+        allocs: [
+            '<div class="mb-1 fw-semibold">采集模式</div>',
+            '<div class="form-check"><input class="form-check-input" type="radio" name="allocs_mode" id="al_snap" value="" checked>',
+            '<label class="form-check-label" for="al_snap">快照 <span class="text-muted">— allocs（历史累计分配）</span></label></div>',
+            '<div class="d-flex align-items-center gap-2 mt-1">',
+            '<input class="form-check-input flex-shrink-0" type="radio" name="allocs_mode" id="al_delta" value="seconds=">',
+            '<label class="form-check-label me-1" for="al_delta">Delta</label>',
+            '<input type="number" id="allocsDeltaSec" value="30" min="1" max="180" class="form-control form-control-sm" style="width:60px">',
+            '<span class="text-muted">秒 — allocs?seconds=N</span></div>'
+        ].join(""),
+
+        profile: [
+            '<div class="mb-1 fw-semibold">采集时长</div>',
+            '<div class="d-flex align-items-center gap-2">',
+            '<input type="number" id="profileSec" value="30" min="1" max="180" class="form-control form-control-sm" style="width:60px">',
+            '<span class="text-muted">秒 → profile?seconds=N</span></div>'
+        ].join(""),
+
+        trace: [
+            '<div class="mb-1 fw-semibold">采集时长</div>',
+            '<div class="d-flex align-items-center gap-2">',
+            '<input type="number" id="traceSec1" value="5" min="1" max="180" class="form-control form-control-sm" style="width:60px">',
+            '<span class="text-muted">秒 → trace?seconds=N</span></div>',
+            '<div class="text-muted mt-1">提示：结果用 go tool trace 查看，不同于 pprof</div>'
+        ].join(""),
+
+        block: [
+            '<div class="alert alert-warning py-1 px-2 mb-2">⚠️ 前置条件：目标程序需调用 <code>runtime.SetBlockProfileRate(rate)</code>，否则采集结果为空文件</div>',
+            '<div class="mb-1 fw-semibold">采集模式</div>',
+            '<div class="form-check"><input class="form-check-input" type="radio" name="block_mode" id="bl_snap" value="" checked>',
+            '<label class="form-check-label" for="bl_snap">快照 → block</label></div>',
+            '<div class="d-flex align-items-center gap-2 mt-1">',
+            '<input class="form-check-input flex-shrink-0" type="radio" name="block_mode" id="bl_delta" value="seconds=">',
+            '<label class="form-check-label me-1" for="bl_delta">Delta</label>',
+            '<input type="number" id="blockDeltaSec" value="30" min="1" max="180" class="form-control form-control-sm" style="width:60px">',
+            '<span class="text-muted">秒 → block?seconds=N</span></div>'
+        ].join(""),
+
+        mutex: [
+            '<div class="alert alert-warning py-1 px-2 mb-2">⚠️ 前置条件：目标程序需调用 <code>runtime.SetMutexProfileFraction(rate)</code>，否则采集结果为空文件</div>',
+            '<div class="mb-1 fw-semibold">采集模式</div>',
+            '<div class="form-check"><input class="form-check-input" type="radio" name="mutex_mode" id="mx_snap" value="" checked>',
+            '<label class="form-check-label" for="mx_snap">快照 → mutex</label></div>',
+            '<div class="d-flex align-items-center gap-2 mt-1">',
+            '<input class="form-check-input flex-shrink-0" type="radio" name="mutex_mode" id="mx_delta" value="seconds=">',
+            '<label class="form-check-label me-1" for="mx_delta">Delta</label>',
+            '<input type="number" id="mutexDeltaSec" value="30" min="1" max="180" class="form-control form-control-sm" style="width:60px">',
+            '<span class="text-muted">秒 → mutex?seconds=N</span></div>'
+        ].join(""),
+
+        threadcreate: '<div class="text-muted">快照 → threadcreate（OS 线程创建调用栈，通常较小）</div>',
+        cmdline:      '<div class="text-muted">无参数，直接采集命令行参数</div>',
+        symbol:       '<div class="text-muted">无参数，返回符号表（通常由 pprof 自动调用）</div>'
+    };
+
+    function getOneParams(type) {
+        var radio, sec;
+        switch (type) {
+            case "goroutine":
+                radio = document.querySelector('input[name="goroutine_mode"]:checked');
+                return radio ? radio.value : "";
+            case "heap":
+                radio = document.querySelector('input[name="heap_mode"]:checked');
+                if (!radio) return "";
+                if (radio.value === "seconds=") {
+                    sec = document.querySelector("#heapDeltaSec");
+                    return "seconds=" + (sec && sec.value ? sec.value : "30");
+                }
+                return radio.value;
+            case "allocs":
+                radio = document.querySelector('input[name="allocs_mode"]:checked');
+                if (!radio) return "";
+                if (radio.value === "seconds=") {
+                    sec = document.querySelector("#allocsDeltaSec");
+                    return "seconds=" + (sec && sec.value ? sec.value : "30");
+                }
+                return radio.value;
+            case "profile":
+                sec = document.querySelector("#profileSec");
+                return "seconds=" + (sec && sec.value ? sec.value : "30");
+            case "trace":
+                sec = document.querySelector("#traceSec1");
+                return "seconds=" + (sec && sec.value ? sec.value : "5");
+            case "block":
+                radio = document.querySelector('input[name="block_mode"]:checked');
+                if (!radio) return "";
+                if (radio.value === "seconds=") {
+                    sec = document.querySelector("#blockDeltaSec");
+                    return "seconds=" + (sec && sec.value ? sec.value : "30");
+                }
+                return radio.value;
+            case "mutex":
+                radio = document.querySelector('input[name="mutex_mode"]:checked');
+                if (!radio) return "";
+                if (radio.value === "seconds=") {
+                    sec = document.querySelector("#mutexDeltaSec");
+                    return "seconds=" + (sec && sec.value ? sec.value : "30");
+                }
+                return radio.value;
+            default:
+                return "";
+        }
+    }
+
+    function buildOneUrl() {
+        var base = oneBaseInput.value.replace(/\/$/, "");
+        var type = oneTypeSelect.value;
+        var params = getOneParams(type);
+        var full = base + "/" + type + (params ? "?" + params : "");
+        oneUrlPreview.value = full;
+        return full;
+    }
+
+    function renderOneTypeParams(type) {
+        oneTypeParams.innerHTML = oneTypeHTML[type] || "";
+        oneTypeParams.querySelectorAll("input").forEach(function(el) {
+            el.addEventListener("change", buildOneUrl);
+            el.addEventListener("input", buildOneUrl);
+        });
+        if (type === "goroutine") {
+            document.querySelectorAll('input[name="goroutine_mode"]').forEach(function(r) {
+                r.addEventListener("change", function() {
+                    var w = document.querySelector("#goroutineStw");
+                    if (w) w.style.display = (this.value === "debug=2") ? "" : "none";
+                });
+            });
+        }
+        buildOneUrl();
+    }
+
+    oneTypeSelect.addEventListener("change", function() { renderOneTypeParams(this.value); });
+    oneBaseInput.addEventListener("input", buildOneUrl);
+    renderOneTypeParams(oneTypeSelect.value);
+
+    var resultManual = document.querySelector("#result_manual");
+
+    document.querySelector("#fetchdataManual").addEventListener("click", function () {
+        var u = document.querySelector('input[name="url_manual"]').value;
+        if (!u) { showError(resultManual, "Please enter a URL"); return; }
+        fetchProfileFromUrl(u, "/opt/run1", resultManual, "run1_manual", "curl url", this);
+    });
+
     var demoBase = "http://127.0.0.1:{{.Port2}}/internal/debug/pprof";
     document.querySelector("#tryDemoOne").addEventListener("click", function () {
-        document.querySelector('input[name="url_one"]').value = demoBase + "/goroutine";
+        oneBaseInput.value = demoBase;
+        oneTypeSelect.value = "goroutine";
+        renderOneTypeParams("goroutine");
+    });
+    document.querySelector("#tryDemoUrl").addEventListener("click", function () {
+        document.querySelector('input[name="url_manual"]').value = demoBase + "/goroutine";
     });
     document.querySelector("#tryDemoBatch").addEventListener("click", function () {
         document.querySelector('input[name="url"]').value = demoBase;
