@@ -64,6 +64,7 @@
                     <button type="button" class="btn btn-primary btn-sm mt-3" id="fetchdata1">
                         <span class="btn-label">Submit</span>
                     </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm mt-3 ms-2" id="getCurlOne">Get curl</button>
                     <div id="result3" class="result-area"></div>
                 </div>
             </div>
@@ -81,6 +82,7 @@
                     <button type="button" class="btn btn-primary btn-sm mt-3" id="fetchdataManual">
                         <span class="btn-label">Submit</span>
                     </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm mt-3 ms-2" id="getCurlManual">Get curl</button>
                     <div id="result_manual" class="result-area"></div>
                 </div>
             </div>
@@ -206,8 +208,29 @@
                     <button type="button" class="btn btn-primary btn-sm mt-3" id="fetchdata">
                         <span class="btn-label">Submit</span>
                     </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm mt-3 ms-2" id="getCurlBatch">Get curl</button>
                     <div id="result" class="result-area"></div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Curl Script Modal -->
+<div class="modal fade" id="curlModal" tabindex="-1" style="display:none">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h6 class="modal-title mb-0">Curl Script</h6>
+                <button type="button" class="btn-close" id="curlModalClose"></button>
+            </div>
+            <div class="modal-body p-2">
+                <pre id="curlScriptContent" class="bg-light p-3 rounded small"
+                     style="max-height:400px;overflow-y:auto;white-space:pre-wrap;word-break:break-all"></pre>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-primary btn-sm" id="copyCurlBtn">复制</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="curlModalDismiss">关闭</button>
             </div>
         </div>
     </div>
@@ -823,6 +846,128 @@
     });
     document.querySelector("#tryDemoBatch").addEventListener("click", function () {
         document.querySelector('input[name="url"]').value = demoBase;
+    });
+
+    // --- Curl Script Export ---
+
+    function showCurlModal(script) {
+        document.querySelector("#curlScriptContent").textContent = script;
+        var modal = document.querySelector("#curlModal");
+        modal.style.display = "block";
+        modal.classList.add("show");
+        document.body.classList.add("modal-open");
+        var backdrop = document.createElement("div");
+        backdrop.className = "modal-backdrop fade show";
+        backdrop.id = "curlModalBackdrop";
+        document.body.appendChild(backdrop);
+    }
+
+    function hideCurlModal() {
+        var modal = document.querySelector("#curlModal");
+        modal.style.display = "none";
+        modal.classList.remove("show");
+        document.body.classList.remove("modal-open");
+        var backdrop = document.querySelector("#curlModalBackdrop");
+        if (backdrop) backdrop.remove();
+    }
+
+    document.querySelector("#curlModalClose").addEventListener("click", hideCurlModal);
+    document.querySelector("#curlModalDismiss").addEventListener("click", hideCurlModal);
+    document.querySelector("#curlModal").addEventListener("click", function (e) {
+        if (e.target === this) hideCurlModal();
+    });
+
+    document.querySelector("#copyCurlBtn").addEventListener("click", function () {
+        var text = document.querySelector("#curlScriptContent").textContent;
+        var btn = this;
+        navigator.clipboard.writeText(text).then(function () {
+            btn.textContent = "已复制 ✓";
+            setTimeout(function () { btn.textContent = "复制"; }, 2000);
+        });
+    });
+
+    function buildBatchScript() {
+        var base = document.querySelector('input[name="url"]').value.replace(/\/$/, "");
+        var sampSec = document.querySelector('input[name="sampling_seconds"]').value || "30";
+        var snapMode = document.querySelector('input[name="snapshot_mode"]:checked').value;
+        var deltaSec = document.querySelector('input[name="delta_seconds"]').value || "30";
+        var traceSec = document.querySelector('input[name="trace_seconds"]').value || "5";
+        var selectedTypes = getSelectedTypes();
+
+        var snapshotParam = snapMode === "delta" ? "?seconds=" + deltaSec : "";
+        var typeInfo = {
+            profile:      { ext: "pprof",  param: "?seconds=" + sampSec },
+            trace:        { ext: "trace",  param: "?seconds=" + traceSec },
+            goroutine:    { ext: "pprof",  param: snapshotParam },
+            heap:         { ext: "pprof",  param: snapshotParam },
+            allocs:       { ext: "pprof",  param: snapshotParam },
+            block:        { ext: "pprof",  param: snapshotParam },
+            mutex:        { ext: "pprof",  param: snapshotParam },
+            threadcreate: { ext: "pprof",  param: snapshotParam }
+        };
+
+        var lines = [
+            "#!/bin/bash",
+            "# Generated by Prof - " + getNowTime(),
+            "# Usage: bash script.sh",
+            "#        Or schedule with cron: */30 * * * * bash /path/to/script.sh",
+            "",
+            'BASE="' + base + '"',
+            'DIR="prof_$(date +%Y%m%d_%H%M%S)"',
+            'mkdir -p "$DIR"',
+            ""
+        ];
+
+        selectedTypes.forEach(function (t) {
+            var info = typeInfo[t];
+            if (!info) return;
+            if (t === "profile") lines.push("# CPU Profile (" + sampSec + "s)");
+            else if (t === "trace") lines.push("# Trace (" + traceSec + "s)");
+            lines.push('curl -o "$DIR/' + t + "." + info.ext + '" "$BASE/' + t + info.param + '"');
+            if (t === "profile" || t === "trace") lines.push("");
+        });
+
+        lines.push("# Meta");
+        lines.push('curl -o "$DIR/cmdline.txt"  "$BASE/cmdline"');
+        lines.push("");
+        lines.push('echo "Saved to $DIR"');
+
+        return lines.join("\n");
+    }
+
+    function buildOneScript() {
+        var url = buildOneUrl();
+        var type = document.querySelector("#pprofType").value;
+        var ext = type === "trace" ? "trace" : (type === "cmdline" || type === "symbol") ? "txt" : "pprof";
+        return [
+            "#!/bin/bash",
+            "# Generated by Prof - " + getNowTime(),
+            'curl -o "$(date +%Y%m%d_%H%M%S)_' + type + "." + ext + '" "' + url + '"'
+        ].join("\n");
+    }
+
+    function buildManualScript(url) {
+        var match = url.match(/\/([^/?#]+)(?:[?#]|$)/);
+        var type = match ? match[1] : "profile";
+        var ext = type === "trace" ? "trace" : (type === "cmdline" || type === "symbol") ? "txt" : "pprof";
+        return [
+            "#!/bin/bash",
+            "# Generated by Prof - " + getNowTime(),
+            'curl -o "$(date +%Y%m%d_%H%M%S)_' + type + "." + ext + '" "' + url + '"'
+        ].join("\n");
+    }
+
+    document.querySelector("#getCurlBatch").addEventListener("click", function () {
+        showCurlModal(buildBatchScript());
+    });
+
+    document.querySelector("#getCurlOne").addEventListener("click", function () {
+        showCurlModal(buildOneScript());
+    });
+
+    document.querySelector("#getCurlManual").addEventListener("click", function () {
+        var url = document.querySelector('input[name="url_manual"]').value;
+        showCurlModal(buildManualScript(url));
     });
 </script>
 </body>
