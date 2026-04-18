@@ -28,6 +28,9 @@ func (uc *Usecase) GetAbsDir(s string) string {
 func (uc *Usecase) GetFileList(date string) (list []string, files []FileInfo, err error) {
 	return uc.repo.GetFileList(date)
 }
+func (uc *Usecase) GetBatchGroups(date string) ([]BatchGroup, error) {
+	return uc.repo.GetBatchGroups(date)
+}
 func (uc *Usecase) GetFileType(dir string) string {
 	return uc.repo.GetFileType(dir)
 }

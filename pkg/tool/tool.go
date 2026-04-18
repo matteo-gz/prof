@@ -10,6 +10,7 @@ type arg interface {
 	setName(name string)
 	SetPort(port int)
 	SetFile(file string)
+	SetBaseFile(file string)
 	AppendEnv([]string) []string
 	build() []string
 }
@@ -30,6 +31,7 @@ func (ca *commonArg) SetFile(file string) {
 func (ca *commonArg) SetPort(port int) {
 	ca.port = port
 }
+func (ca *commonArg) SetBaseFile(_ string) {}
 
 const (
 	Sep     = " "

@@ -63,6 +63,7 @@ type Proxy struct {
 	useTime  int64
 	Cmd      *exec.Cmd
 	dir      string
+	baseFile string
 	lifeTime int64
 	fileType string
 	log      *log.Helper
@@ -120,6 +121,7 @@ func (p *Proxy) start(port int) (err error) {
 	tools := tool.NewTool(p.fileType)
 	tools.Arg().SetPort(port)
 	tools.Arg().SetFile(p.dir)
+	tools.Arg().SetBaseFile(p.baseFile)
 	cmdStr := tools.Command()
 	p.log.Debug(cmdStr)
 	p.Cmd = process.Shell(cmdStr)

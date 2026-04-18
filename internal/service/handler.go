@@ -17,10 +17,12 @@ import (
 )
 
 const (
-	RoutePprofPre = "/pprof"
-	RouteTracePre = "/trace"
-	RouteTrace    = RouteTracePre + "/%s/"
-	RoutePprof    = RoutePprofPre + "/%s/"
+	RoutePprofPre     = "/pprof"
+	RouteTracePre     = "/trace"
+	RoutePprofDiffPre = "/pprof-diff"
+	RouteTrace        = RouteTracePre + "/%s/"
+	RoutePprof        = RoutePprofPre + "/%s/"
+	RoutePprofDiff    = RoutePprofDiffPre + "/%s/%s/"
 )
 
 func (s *Service) Index(c *gin.Context) {
@@ -58,6 +60,22 @@ func (s *Service) PersonCurl(c *gin.Context) {
 	c.String(http.StatusOK, buf.String())
 }
 
+func isDateDir(dir string) bool {
+	base := dir
+	if idx := strings.LastIndex(dir, "/"); idx >= 0 {
+		base = dir[idx+1:]
+	}
+	if len(base) != 8 {
+		return false
+	}
+	for _, c := range base {
+		if c < '0' || c > '9' {
+			return false
+		}
+	}
+	return true
+}
+
 func (s *Service) FileList(c *gin.Context) {
 	dir := c.Query("dir")
 	lists, files, _ := s.uc.GetFileList(dir)
@@ -65,6 +83,12 @@ func (s *Service) FileList(c *gin.Context) {
 		"list":  lists,
 		"dir":   dir,
 		"files": files,
+	}
+	if isDateDir(dir) {
+		if groups, err := s.uc.GetBatchGroups(dir); err == nil && len(groups) > 0 {
+			data["groups"] = groups
+			data["list"] = nil
+		}
 	}
 	c.Header("Content-Type", "text/html; charset=utf-8")
 	var buf bytes.Buffer
@@ -134,6 +158,22 @@ func (s *Service) PprofProxy(c *gin.Context) {
 	}
 	s.log.Debugf("%#v", u)
 	err := s.uc.Proxy(u, c.Writer, c.Request)
+	if err != nil {
+		c.String(404, err.Error())
+	}
+}
+
+func (s *Service) PprofDiffProxy(c *gin.Context) {
+	u := newUri(c)
+	u.Base = c.Param("base")
+	u.Route = RoutePprofDiff
+	u.ProxyBasePath = "/ui/"
+	u.ReBody = func(body string, currPath string) string {
+		body = strings.ReplaceAll(body, "href=\"./", "href=\""+currPath)
+		return body
+	}
+	s.log.Debugf("%#v", u)
+	err := s.uc.ProxyDiff(u, c.Writer, c.Request)
 	if err != nil {
 		c.String(404, err.Error())
 	}

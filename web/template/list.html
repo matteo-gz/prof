@@ -47,12 +47,36 @@
     </div>
     {{end}}
 
+    {{if .groups}}
+    <div id="batchGroups">
+        {{range .groups}}
+        {{$groupDir := .Dir}}
+        <div class="card mb-2">
+            <div class="card-header py-2 d-flex align-items-center gap-2">
+                <span class="fw-semibold text-secondary small">&#128336;</span>
+                <span class="fw-semibold">{{fmtBatchTime .Label}}</span>
+                <span class="text-muted small ms-1">{{len .Files}} 个文件</span>
+            </div>
+            <ul class="list-group list-group-flush">
+                {{range .Files}}
+                <li class="list-group-item file-item py-2 d-flex align-items-center gap-2" data-size="{{.Size}}" data-name="{{.Name}}" data-path="{{$groupDir}}/{{.Name}}">
+                    <span class="file-icon">&#128196;</span>
+                    <a target="_blank" href="/file?dir={{$groupDir}}/{{.Name}}">{{.Name}}</a>
+                    <span class="text-muted small ms-auto file-size"></span>
+                </li>
+                {{end}}
+            </ul>
+        </div>
+        {{end}}
+    </div>
+    {{end}}
+
     {{if .files}}
     <div class="card">
         <div class="card-header py-2 small text-muted">Files</div>
         <ul class="list-group list-group-flush" id="fileList">
             {{range $_ := .files}}
-            <li class="list-group-item file-item py-2 d-flex align-items-center" data-size="{{.Size}}">
+            <li class="list-group-item file-item py-2 d-flex align-items-center gap-2" data-size="{{.Size}}" data-name="{{.Name}}" data-path="{{$dir}}/{{.Name}}">
                 <span class="file-icon">&#128196;</span>
                 <a target="_blank" href="/file?dir={{$dir}}/{{.Name}}">{{.Name}}</a>
                 <span class="text-muted small ms-auto file-size"></span>
@@ -62,6 +86,19 @@
     </div>
     {{end}}
 </div>
+
+<!-- 对比篮浮动栏：跨目录持久，localStorage 驱动 -->
+<div id="diffBar" class="position-fixed bottom-0 start-0 end-0 bg-white border-top shadow d-none" style="z-index:1050">
+    <div class="container py-2 d-flex align-items-center gap-2 flex-wrap">
+        <span class="small" id="diffStatus"></span>
+        <div class="ms-auto d-flex gap-2">
+            <button id="diffGoBtn" class="btn btn-primary btn-sm" disabled>Diff 对比</button>
+            <button id="diffClearBtn" class="btn btn-outline-secondary btn-sm">清除</button>
+        </div>
+    </div>
+</div>
+
+<div style="height:56px" id="diffBarSpacer" class="d-none"></div>
 
 <script>
     function formatSize(bytes) {
@@ -136,13 +173,11 @@
             bc.appendChild(li);
         }
 
-        var fl = document.getElementById("fileList");
-        if (!fl) return;
-        var items = fl.querySelectorAll("li");
+        var items = document.querySelectorAll("li[data-name]");
         for (var j = 0; j < items.length; j++) {
             var link = items[j].querySelector("a");
             if (!link) continue;
-            var name = link.textContent;
+            var name = items[j].getAttribute("data-name") || link.textContent;
             var badge = fileBadge(name);
             if (badge) items[j].insertBefore(badge, link);
 
@@ -153,6 +188,134 @@
                 if (sz) sizeEl.textContent = sz;
             }
         }
+    })();
+
+    // ---- 对比篮：跨目录 diff，localStorage 持久化 ----
+    (function () {
+        var STORAGE_KEY = 'prof_diff_basket';
+        var diffBar    = document.getElementById("diffBar");
+        var diffSpacer = document.getElementById("diffBarSpacer");
+        var diffStatus = document.getElementById("diffStatus");
+        var diffGoBtn  = document.getElementById("diffGoBtn");
+        var diffClearBtn = document.getElementById("diffClearBtn");
+
+        // ---- 篮子操作 ----
+        function getBasket() {
+            try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+            catch(e) { return []; }
+        }
+        function saveBasket(b) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(b));
+        }
+        function isInBasket(path) {
+            return getBasket().some(function(f){ return f.path === path; });
+        }
+        function toggleBasket(path, name) {
+            var b = getBasket();
+            var idx = -1;
+            for (var i = 0; i < b.length; i++) { if (b[i].path === path) { idx = i; break; } }
+            if (idx >= 0) {
+                b.splice(idx, 1);
+            } else {
+                if (b.length >= 2) return;
+                b.push({ path: path, name: name });
+            }
+            saveBasket(b);
+        }
+
+        // ---- 渲染浮动栏 ----
+        function renderBar() {
+            var b = getBasket();
+            renderFileButtons();
+            if (b.length === 0) {
+                diffBar.classList.add("d-none");
+                diffSpacer.classList.add("d-none");
+                return;
+            }
+            diffBar.classList.remove("d-none");
+            diffSpacer.classList.remove("d-none");
+            if (b.length === 1) {
+                diffStatus.innerHTML = '<span class="badge bg-primary me-1">1/2</span>' +
+                    '<span class="fw-semibold">' + escHtml(b[0].name) + '</span>' +
+                    '<span class="text-muted ms-2">— 再去选第二个 .pprof 文件</span>';
+                diffGoBtn.disabled = true;
+            } else {
+                diffStatus.innerHTML = '<span class="badge bg-success me-1">2/2</span>' +
+                    '<span class="fw-semibold">' + escHtml(b[0].name) + '</span>' +
+                    '<span class="text-muted mx-1">vs</span>' +
+                    '<span class="fw-semibold">' + escHtml(b[1].name) + '</span>';
+                diffGoBtn.disabled = false;
+            }
+            renderFileButtons();
+        }
+
+        function escHtml(s) {
+            return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+
+        // ---- 给当前页 .pprof 文件行注入「加入对比」按钮 ----
+        function renderFileButtons() {
+            var items = document.querySelectorAll("li[data-name]");
+            for (var i = 0; i < items.length; i++) {
+                var name = items[i].getAttribute("data-name");
+                if (!name || !name.endsWith(".pprof")) continue;
+                var path = items[i].getAttribute("data-path");
+                var btn = items[i].querySelector(".diff-add-btn");
+                var inBasket = isInBasket(path);
+                var basketFull = getBasket().length >= 2 && !inBasket;
+                if (!btn) {
+                    btn = document.createElement("button");
+                    btn.className = "diff-add-btn btn btn-sm ms-1 flex-shrink-0";
+                    btn.style.padding = "1px 7px";
+                    btn.title = "加入 Diff 对比";
+                    var sizeEl = items[i].querySelector(".file-size");
+                    if (sizeEl) {
+                        items[i].insertBefore(btn, sizeEl);
+                    } else {
+                        items[i].appendChild(btn);
+                    }
+                    (function(p, n, b) {
+                        b.addEventListener("click", function(e) {
+                            e.preventDefault();
+                            toggleBasket(p, n);
+                            renderBar();
+                        });
+                    })(path, name, btn);
+                }
+                if (inBasket) {
+                    btn.textContent = "✓ 已选";
+                    btn.className = "diff-add-btn btn btn-sm btn-success ms-1 flex-shrink-0";
+                } else if (basketFull) {
+                    btn.textContent = "+ 对比";
+                    btn.className = "diff-add-btn btn btn-sm btn-outline-secondary ms-1 flex-shrink-0";
+                    btn.disabled = true;
+                } else {
+                    btn.textContent = "+ 对比";
+                    btn.className = "diff-add-btn btn btn-sm btn-outline-primary ms-1 flex-shrink-0";
+                    btn.disabled = false;
+                }
+            }
+        }
+
+        // ---- 事件 ----
+        diffGoBtn && diffGoBtn.addEventListener("click", function () {
+            var b = getBasket();
+            if (b.length !== 2) return;
+            var base    = btoa(unescape(encodeURIComponent(b[0].path)));
+            var compare = btoa(unescape(encodeURIComponent(b[1].path)));
+            var url = "/pprof-diff/" + encodeURIComponent(base) + "/" + encodeURIComponent(compare) + "/";
+            var a = document.createElement("a");
+            a.href = url; a.target = "_blank"; a.rel = "noopener noreferrer";
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        });
+
+        diffClearBtn && diffClearBtn.addEventListener("click", function () {
+            saveBasket([]);
+            renderBar();
+        });
+
+        // ---- 初始化 ----
+        renderBar();
     })();
 </script>
 </body>

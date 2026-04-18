@@ -66,7 +66,7 @@ func (t *task) GetProxy(dir string) (p *Proxy) {
 	t.listLock.Lock()
 	p, ok := t.list[index]
 	if !ok {
-		p = newProxy(filepath.Join(filepath.Split(dir)), t.log)
+		p = newProxy(filepath.Join(filepath.Split(dir)), "", t.log)
 		t.list[index] = p
 	}
 	t.listLock.Unlock()
@@ -87,4 +87,26 @@ func (t *task) getPortByDir(dir string) (port int, err error) {
 	p := t.GetProxy(dir)
 	port, err = p.GetCanUsePort()
 	return
+}
+
+func (t *task) getDiffIndex(base, compare string) string {
+	return base + "::" + compare
+}
+
+func (t *task) GetDiffProxy(base, compare string) *Proxy {
+	index := t.getDiffIndex(base, compare)
+	t.listLock.Lock()
+	p, ok := t.list[index]
+	if !ok {
+		p = newProxy(compare, base, t.log)
+		t.list[index] = p
+	}
+	t.listLock.Unlock()
+	p.UpdateUseTime()
+	return p
+}
+
+func (t *task) getPortByDiff(base, compare string) (port int, err error) {
+	p := t.GetDiffProxy(base, compare)
+	return p.GetCanUsePort()
 }

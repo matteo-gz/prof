@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"sort"
 	"strings"
 
 	"github.com/go-kratos/kratos/v2/log"
@@ -69,5 +70,6 @@ func (f *file) getFileList(date string) (list []string, files []biz.FileInfo, er
 			files = append(files, biz.FileInfo{Name: fi.Name(), Size: fi.Size()})
 		}
 	}
+	sort.Sort(sort.Reverse(sort.StringSlice(list)))
 	return list, files, nil
 }
