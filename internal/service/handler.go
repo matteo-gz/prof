@@ -50,6 +50,22 @@ func (s *Service) Css(c *gin.Context) {
 	c.Data(http.StatusOK, "text/css; charset=utf-8", data)
 }
 
+func (s *Service) StaticFile(c *gin.Context) {
+	fp := c.Param("filepath")
+	data, err := web.StaticFS.ReadFile("static" + fp)
+	if err != nil {
+		c.String(http.StatusNotFound, "not found")
+		return
+	}
+	if strings.HasSuffix(fp, ".js") {
+		c.Data(http.StatusOK, "application/javascript; charset=utf-8", data)
+	} else if strings.HasSuffix(fp, ".css") {
+		c.Data(http.StatusOK, "text/css; charset=utf-8", data)
+	} else {
+		c.Data(http.StatusOK, "application/octet-stream", data)
+	}
+}
+
 func (s *Service) PersonCurl(c *gin.Context) {
 	c.Header("Content-Type", "text/html; charset=utf-8")
 	var buf bytes.Buffer
@@ -140,6 +156,15 @@ func (s *Service) File(c *gin.Context) {
 	}
 }
 
+const pluginLoaderTag = `<script src="/static/plugins/loader.js"></script>`
+
+func injectPlugins(body string) string {
+	if idx := strings.Index(body, "</head>"); idx >= 0 {
+		return body[:idx] + pluginLoaderTag + body[idx:]
+	}
+	return body
+}
+
 func newUri(c *gin.Context) biz.Uri {
 	return biz.Uri{
 		Path:  c.Request.URL.Path,
@@ -154,6 +179,7 @@ func (s *Service) PprofProxy(c *gin.Context) {
 	u.ProxyBasePath = "/ui/"
 	u.ReBody = func(body string, currPath string) string {
 		body = strings.ReplaceAll(body, "href=\"./", "href=\""+currPath)
+		body = injectPlugins(body)
 		return body
 	}
 	s.log.Debugf("%#v", u)
@@ -170,6 +196,7 @@ func (s *Service) PprofDiffProxy(c *gin.Context) {
 	u.ProxyBasePath = "/ui/"
 	u.ReBody = func(body string, currPath string) string {
 		body = strings.ReplaceAll(body, "href=\"./", "href=\""+currPath)
+		body = injectPlugins(body)
 		return body
 	}
 	s.log.Debugf("%#v", u)

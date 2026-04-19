@@ -51,6 +51,7 @@ func (h *HTTPServerX) router() (r *gin.Engine, err error) {
 	r.GET(service.RoutePprofDiffPre+"/:base/:dir/*any", h.srv.PprofDiffProxy)
 	r.GET("/person/curl", h.srv.PersonCurl)
 	r.GET("/bootstrap.min.css", h.srv.Css)
+	r.GET("/static/*filepath", h.srv.StaticFile)
 	r.POST("/opt/upload", h.srv.Upload)
 	r.POST("/opt/run", h.srv.Run)
 	r.POST("/opt/run1", h.srv.Run1)
