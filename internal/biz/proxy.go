@@ -8,7 +8,9 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strconv"
 	"strings"
+	"sync"
 )
 
 type pp struct {
@@ -24,7 +26,9 @@ type cp struct {
 type px struct {
 }
 
-type replaceBody func(body string, currPath string) string
+type replaceBody func(body []byte, currPath string) []byte
+
+var proxyBufPool = sync.Pool{New: func() any { return new(bytes.Buffer) }}
 type Uri struct {
 	Path          string
 	Dir           string
@@ -54,21 +58,23 @@ func (uc *Usecase) Proxy(u Uri, rw http.ResponseWriter, req *http.Request) (err 
 	}
 	proxy := &httputil.ReverseProxy{Director: director}
 	proxy.ModifyResponse = func(res *http.Response) error {
-		if res.StatusCode == 200 {
-			oldPayload, err := io.ReadAll(res.Body)
-			if err != nil {
-				return err
-			}
-			newPayLoadStr := string(oldPayload)
-			newPayLoadStr = u.ReBody(newPayLoadStr, currPath)
-			newPayLoad := []byte(newPayLoadStr)
-			res.Body = io.NopCloser(bytes.NewBuffer(newPayLoad))
-			res.ContentLength = int64(len(newPayLoad))
-			res.Header.Set("Content-Length", fmt.Sprint(len(newPayLoad)))
-			return nil
-		} else {
+		if res.StatusCode != 200 {
 			return nil
 		}
+		buf := proxyBufPool.Get().(*bytes.Buffer)
+		buf.Reset()
+		if _, err := buf.ReadFrom(res.Body); err != nil {
+			proxyBufPool.Put(buf)
+			return err
+		}
+		transformed := u.ReBody(buf.Bytes(), currPath)
+		result := make([]byte, len(transformed))
+		copy(result, transformed)
+		proxyBufPool.Put(buf)
+		res.Body = io.NopCloser(bytes.NewReader(result))
+		res.ContentLength = int64(len(result))
+		res.Header.Set("Content-Length", strconv.Itoa(len(result)))
+		return nil
 	}
 	proxy.ServeHTTP(rw, req)
 	return nil
@@ -101,19 +107,22 @@ func (uc *Usecase) ProxyDiff(u Uri, rw http.ResponseWriter, req *http.Request) (
 	}
 	proxy := &httputil.ReverseProxy{Director: director}
 	proxy.ModifyResponse = func(res *http.Response) error {
-		if res.StatusCode == 200 {
-			oldPayload, err := io.ReadAll(res.Body)
-			if err != nil {
-				return err
-			}
-			newPayLoadStr := string(oldPayload)
-			newPayLoadStr = u.ReBody(newPayLoadStr, currPath)
-			newPayLoad := []byte(newPayLoadStr)
-			res.Body = io.NopCloser(bytes.NewBuffer(newPayLoad))
-			res.ContentLength = int64(len(newPayLoad))
-			res.Header.Set("Content-Length", fmt.Sprint(len(newPayLoad)))
+		if res.StatusCode != 200 {
 			return nil
 		}
+		buf := proxyBufPool.Get().(*bytes.Buffer)
+		buf.Reset()
+		if _, err := buf.ReadFrom(res.Body); err != nil {
+			proxyBufPool.Put(buf)
+			return err
+		}
+		transformed := u.ReBody(buf.Bytes(), currPath)
+		result := make([]byte, len(transformed))
+		copy(result, transformed)
+		proxyBufPool.Put(buf)
+		res.Body = io.NopCloser(bytes.NewReader(result))
+		res.ContentLength = int64(len(result))
+		res.Header.Set("Content-Length", strconv.Itoa(len(result)))
 		return nil
 	}
 	proxy.ServeHTTP(rw, req)

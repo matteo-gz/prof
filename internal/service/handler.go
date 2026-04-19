@@ -165,6 +165,21 @@ func injectPlugins(body string) string {
 	return body
 }
 
+var pluginLoaderTagBytes = []byte(pluginLoaderTag)
+var headCloseTag = []byte("</head>")
+
+func injectPluginsBytes(body []byte) []byte {
+	idx := bytes.Index(body, headCloseTag)
+	if idx < 0 {
+		return body
+	}
+	out := make([]byte, 0, len(body)+len(pluginLoaderTagBytes))
+	out = append(out, body[:idx]...)
+	out = append(out, pluginLoaderTagBytes...)
+	out = append(out, body[idx:]...)
+	return out
+}
+
 func newUri(c *gin.Context) biz.Uri {
 	return biz.Uri{
 		Path:  c.Request.URL.Path,
@@ -177,9 +192,9 @@ func (s *Service) PprofProxy(c *gin.Context) {
 	u := newUri(c)
 	u.Route = RoutePprof
 	u.ProxyBasePath = "/ui/"
-	u.ReBody = func(body string, currPath string) string {
-		body = strings.ReplaceAll(body, "href=\"./", "href=\""+currPath)
-		body = injectPlugins(body)
+	u.ReBody = func(body []byte, currPath string) []byte {
+		body = bytes.ReplaceAll(body, []byte(`href="./`), []byte(`href="`+currPath))
+		body = injectPluginsBytes(body)
 		return body
 	}
 	s.log.Debugf("%#v", u)
@@ -194,9 +209,9 @@ func (s *Service) PprofDiffProxy(c *gin.Context) {
 	u.Base = c.Param("base")
 	u.Route = RoutePprofDiff
 	u.ProxyBasePath = "/ui/"
-	u.ReBody = func(body string, currPath string) string {
-		body = strings.ReplaceAll(body, "href=\"./", "href=\""+currPath)
-		body = injectPlugins(body)
+	u.ReBody = func(body []byte, currPath string) []byte {
+		body = bytes.ReplaceAll(body, []byte(`href="./`), []byte(`href="`+currPath))
+		body = injectPluginsBytes(body)
 		return body
 	}
 	s.log.Debugf("%#v", u)
@@ -210,12 +225,13 @@ func (s *Service) TraceProxy(c *gin.Context) {
 	u := newUri(c)
 	u.Route = RouteTrace
 	u.ProxyBasePath = "/"
-	u.ReBody = func(body string, currPath string) string {
-		body = strings.ReplaceAll(body, "href=\"/", "href=\""+currPath)
-		body = strings.ReplaceAll(body, "src=\"/", "src=\""+currPath)
-		body = strings.ReplaceAll(body, "action=\"/", "action=\""+currPath)
-		body = strings.ReplaceAll(body, "getJSON('/", "getJSON('"+currPath)
-		body = strings.ReplaceAll(body, "url = '/", "url = '"+currPath)
+	u.ReBody = func(body []byte, currPath string) []byte {
+		cp := []byte(currPath)
+		body = bytes.ReplaceAll(body, []byte(`href="/`), append([]byte(`href="`), cp...))
+		body = bytes.ReplaceAll(body, []byte(`src="/`), append([]byte(`src="`), cp...))
+		body = bytes.ReplaceAll(body, []byte(`action="/`), append([]byte(`action="`), cp...))
+		body = bytes.ReplaceAll(body, []byte("getJSON('/"), append([]byte("getJSON('"), cp...))
+		body = bytes.ReplaceAll(body, []byte("url = '/"), append([]byte("url = '"), cp...))
 		return body
 	}
 	s.log.Debugf("%#v", u)

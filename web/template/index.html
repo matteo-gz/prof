@@ -782,75 +782,75 @@
         goroutine: [
             '<div class="mb-1 fw-semibold">' + t('goroutine.modeLabel') + '</div>',
             '<div class="form-check"><input class="form-check-input" type="radio" name="goroutine_mode" id="g_pprof" value="" checked>',
-            '<label class="form-check-label" for="g_pprof">' + t('goroutine.modePprof') + ' <span class="text-muted">— goroutine（flame graph）</span></label></div>',
+            '<label class="form-check-label" for="g_pprof">' + t('goroutine.modePprof') + ' <span class="text-muted">' + t('goroutine.modePprofDesc') + '</span></label></div>',
             '<div class="form-check"><input class="form-check-input" type="radio" name="goroutine_mode" id="g_debug1" value="debug=1">',
-            '<label class="form-check-label" for="g_debug1">' + t('goroutine.modeText') + ' <span class="text-muted">— goroutine?debug=1（总数 + 栈分布）</span></label></div>',
+            '<label class="form-check-label" for="g_debug1">' + t('goroutine.modeText') + ' <span class="text-muted">' + t('goroutine.modeTextDesc') + '</span></label></div>',
             '<div class="form-check"><input class="form-check-input" type="radio" name="goroutine_mode" id="g_debug2" value="debug=2">',
-            '<label class="form-check-label" for="g_debug2">' + t('goroutine.modeFull') + ' <span class="badge bg-warning text-dark ms-1">⚠ STW</span> <span class="text-muted">— goroutine?debug=2</span></label></div>',
+            '<label class="form-check-label" for="g_debug2">' + t('goroutine.modeFull') + ' <span class="badge bg-warning text-dark ms-1">⚠ STW</span> <span class="text-muted">' + t('goroutine.modeFullDesc') + '</span></label></div>',
             '<div class="text-danger mt-1" id="goroutineStw" style="display:none">' + t('goroutine.stwWarn') + '</div>'
         ].join(""),
 
         heap: [
             '<div class="mb-1 fw-semibold">' + t('heap.modeLabel') + '</div>',
             '<div class="form-check"><input class="form-check-input" type="radio" name="heap_mode" id="h_snap" value="" checked>',
-            '<label class="form-check-label" for="h_snap">' + t('heap.snapshot') + ' <span class="text-muted">— heap（当前堆内存）</span></label></div>',
+            '<label class="form-check-label" for="h_snap">' + t('heap.snapshot') + ' <span class="text-muted">' + t('heap.snapshotDesc') + '</span></label></div>',
             '<div class="form-check"><input class="form-check-input" type="radio" name="heap_mode" id="h_gc" value="gc=1">',
-            '<label class="form-check-label" for="h_gc">' + t('heap.gcSnapshot') + ' <span class="text-muted">— heap?gc=1（真实存活对象，更准确）</span></label></div>',
+            '<label class="form-check-label" for="h_gc">' + t('heap.gcSnapshot') + ' <span class="text-muted">' + t('heap.gcSnapshotDesc') + '</span></label></div>',
             '<div class="d-flex align-items-center gap-2 mt-1">',
             '<input class="form-check-input flex-shrink-0" type="radio" name="heap_mode" id="h_delta" value="seconds=">',
             '<label class="form-check-label me-1" for="h_delta">' + t('heap.delta') + '</label>',
             '<input type="number" id="heapDeltaSec" value="30" min="1" max="180" class="form-control form-control-sm" style="width:60px">',
-            '<span class="text-muted">秒 — heap?seconds=N</span></div>'
+            '<span class="text-muted">' + t('heap.deltaDesc') + '</span></div>'
         ].join(""),
 
         allocs: [
             '<div class="mb-1 fw-semibold">' + t('allocs.modeLabel') + '</div>',
             '<div class="form-check"><input class="form-check-input" type="radio" name="allocs_mode" id="al_snap" value="" checked>',
-            '<label class="form-check-label" for="al_snap">' + t('allocs.snapshot') + ' <span class="text-muted">— allocs（历史累计分配）</span></label></div>',
+            '<label class="form-check-label" for="al_snap">' + t('allocs.snapshot') + ' <span class="text-muted">' + t('allocs.snapshotDesc') + '</span></label></div>',
             '<div class="d-flex align-items-center gap-2 mt-1">',
             '<input class="form-check-input flex-shrink-0" type="radio" name="allocs_mode" id="al_delta" value="seconds=">',
             '<label class="form-check-label me-1" for="al_delta">' + t('allocs.delta') + '</label>',
             '<input type="number" id="allocsDeltaSec" value="30" min="1" max="180" class="form-control form-control-sm" style="width:60px">',
-            '<span class="text-muted">秒 — allocs?seconds=N</span></div>'
+            '<span class="text-muted">' + t('allocs.deltaDesc') + '</span></div>'
         ].join(""),
 
         profile: [
             '<div class="mb-1 fw-semibold">' + t('profile.durationLabel') + '</div>',
             '<div class="d-flex align-items-center gap-2">',
             '<input type="number" id="profileSec" value="30" min="1" max="180" class="form-control form-control-sm" style="width:60px">',
-            '<span class="text-muted">秒 → profile?seconds=N</span></div>'
+            '<span class="text-muted">' + t('profile.durationDesc') + '</span></div>'
         ].join(""),
 
         trace: [
             '<div class="mb-1 fw-semibold">' + t('trace.durationLabel') + '</div>',
             '<div class="d-flex align-items-center gap-2">',
             '<input type="number" id="traceSec1" value="5" min="1" max="180" class="form-control form-control-sm" style="width:60px">',
-            '<span class="text-muted">秒 → trace?seconds=N</span></div>',
+            '<span class="text-muted">' + t('trace.durationDesc') + '</span></div>',
             '<div class="text-muted mt-1">' + t('trace.hint') + '</div>'
         ].join(""),
 
         block: [
-            '<div class="alert alert-warning py-1 px-2 mb-2">' + t('block.prereqWarn') + ' <code>runtime.SetBlockProfileRate(rate)</code></div>',
+            '<div class="alert alert-warning py-1 px-2 mb-2">' + t('block.prereqWarn') + '</div>',
             '<div class="mb-1 fw-semibold">' + t('heap.modeLabel') + '</div>',
             '<div class="form-check"><input class="form-check-input" type="radio" name="block_mode" id="bl_snap" value="" checked>',
-            '<label class="form-check-label" for="bl_snap">' + t('heap.snapshot') + ' → block</label></div>',
+            '<label class="form-check-label" for="bl_snap">' + t('block.snapshot') + '</label></div>',
             '<div class="d-flex align-items-center gap-2 mt-1">',
             '<input class="form-check-input flex-shrink-0" type="radio" name="block_mode" id="bl_delta" value="seconds=">',
-            '<label class="form-check-label me-1" for="bl_delta">Delta</label>',
+            '<label class="form-check-label me-1" for="bl_delta">' + t('block.delta') + '</label>',
             '<input type="number" id="blockDeltaSec" value="30" min="1" max="180" class="form-control form-control-sm" style="width:60px">',
-            '<span class="text-muted">秒 → block?seconds=N</span></div>'
+            '<span class="text-muted">' + t('block.deltaDesc') + '</span></div>'
         ].join(""),
 
         mutex: [
-            '<div class="alert alert-warning py-1 px-2 mb-2">' + t('mutex.prereqWarn') + ' <code>runtime.SetMutexProfileFraction(rate)</code></div>',
+            '<div class="alert alert-warning py-1 px-2 mb-2">' + t('mutex.prereqWarn') + '</div>',
             '<div class="mb-1 fw-semibold">' + t('heap.modeLabel') + '</div>',
             '<div class="form-check"><input class="form-check-input" type="radio" name="mutex_mode" id="mx_snap" value="" checked>',
-            '<label class="form-check-label" for="mx_snap">' + t('heap.snapshot') + ' → mutex</label></div>',
+            '<label class="form-check-label" for="mx_snap">' + t('mutex.snapshot') + '</label></div>',
             '<div class="d-flex align-items-center gap-2 mt-1">',
             '<input class="form-check-input flex-shrink-0" type="radio" name="mutex_mode" id="mx_delta" value="seconds=">',
-            '<label class="form-check-label me-1" for="mx_delta">Delta</label>',
+            '<label class="form-check-label me-1" for="mx_delta">' + t('mutex.delta') + '</label>',
             '<input type="number" id="mutexDeltaSec" value="30" min="1" max="180" class="form-control form-control-sm" style="width:60px">',
-            '<span class="text-muted">秒 → mutex?seconds=N</span></div>'
+            '<span class="text-muted">' + t('mutex.deltaDesc') + '</span></div>'
         ].join(""),
 
         threadcreate: '<div class="text-muted">' + t('threadcreate.hint') + '</div>',
