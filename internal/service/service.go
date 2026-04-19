@@ -20,6 +20,7 @@ type Service struct {
 	deltaSeconds    int
 	traceSeconds    int
 	tmpl            *template.Template
+	pluginsConfig   conf.PluginsConfig
 }
 
 func NewService(c *conf.Bs, uc *biz.Usecase, logger log.Logger) *Service {
@@ -40,6 +41,10 @@ func NewService(c *conf.Bs, uc *biz.Usecase, logger log.Logger) *Service {
 			return strings.ReplaceAll(s, "_", ":")
 		},
 	}).ParseFS(web.TemplateFS, "template/*.html"))
+	var pluginsCfg conf.PluginsConfig
+	if c.Plugins != nil {
+		pluginsCfg = *c.Plugins
+	}
 	return &Service{
 		env:             c.App.Env,
 		port2:           c.Server.Port2,
@@ -49,6 +54,7 @@ func NewService(c *conf.Bs, uc *biz.Usecase, logger log.Logger) *Service {
 		uc:              uc,
 		log:             log.NewHelper(logger),
 		tmpl:            tmpl,
+		pluginsConfig:   pluginsCfg,
 	}
 }
 

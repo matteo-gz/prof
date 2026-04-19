@@ -55,6 +55,10 @@ func (h *HTTPServerX) router() (r *gin.Engine, err error) {
 	r.POST("/opt/upload", h.srv.Upload)
 	r.POST("/opt/run", h.srv.Run)
 	r.POST("/opt/run1", h.srv.Run1)
+	api := r.Group("/api")
+	{
+		api.GET("/plugins", h.srv.APIPlugins)
+	}
 	return
 }
 

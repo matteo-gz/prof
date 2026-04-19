@@ -1,8 +1,12 @@
 (function () {
   'use strict';
 
+  // MANIFEST: plugin name → static src path; all default-off via /api/plugins
   var MANIFEST = [
-    '/static/plugins/i18n-zh.js',
+    { name: 'i18n-zh',       src: '/static/plugins/i18n-zh.js' },
+    { name: 'source-fold',   src: '/static/plugins/source-fold.js' },
+    { name: 'peek-fold',     src: '/static/plugins/peek-fold.js' },
+    { name: 'graph-explain', src: '/static/plugins/graph-explain.js' },
   ];
 
   var runtime = {
@@ -82,23 +86,64 @@
 
   window.ProfPlugin = runtime;
 
-  function loadScripts() {
-    if (MANIFEST.length === 0) {
-      onAllLoaded();
-      return;
-    }
-    var loaded = 0;
-    for (var i = 0; i < MANIFEST.length; i++) {
-      var s = document.createElement('script');
-      s.src = MANIFEST[i];
-      s.async = false;
-      s.onload = s.onerror = function () {
-        loaded++;
-        if (loaded >= MANIFEST.length) {
-          onAllLoaded();
+  // ── Fetch server-side plugin defaults ──────────────────────────────────────
+  function fetchPluginConfig(callback) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/api/plugins');
+    xhr.onload = function () {
+      var config = {};
+      if (xhr.status === 200) {
+        try {
+          var data = JSON.parse(xhr.responseText);
+          (data.plugins || []).forEach(function (p) {
+            config[p.name] = p.enabled;
+          });
+        } catch (e) {
+          console.warn('[ProfPlugin] failed to parse /api/plugins:', e);
         }
-      };
-      document.head.appendChild(s);
+      }
+      callback(config);
+    };
+    xhr.onerror = function () { callback({}); };
+    xhr.send();
+  }
+
+  // ── Merge localStorage overrides (highest priority) ────────────────────────
+  function resolveEnabled(serverConfig) {
+    var result = {};
+    Object.keys(serverConfig).forEach(function (name) {
+      var lsKey = 'prof-plugin-' + name;
+      var lsVal = localStorage.getItem(lsKey);
+      if (lsVal !== null) {
+        result[name] = lsVal === 'true';
+      } else {
+        result[name] = serverConfig[name];
+      }
+    });
+    return result;
+  }
+
+  // ── Load a single script, invoke cb when done ──────────────────────────────
+  function loadScript(src, cb) {
+    var s = document.createElement('script');
+    s.src = src;
+    s.async = false;
+    s.onload = s.onerror = function () { cb(); };
+    document.head.appendChild(s);
+  }
+
+  // ── Load enabled plugins from MANIFEST sequentially ───────────────────────
+  function loadEnabledPlugins(enabledMap, cb) {
+    var toLoad = MANIFEST.filter(function (item) {
+      return enabledMap[item.name] === true;
+    });
+    if (toLoad.length === 0) { cb(); return; }
+    var loaded = 0;
+    for (var i = 0; i < toLoad.length; i++) {
+      loadScript(toLoad[i].src, function () {
+        loaded++;
+        if (loaded >= toLoad.length) { cb(); }
+      });
     }
   }
 
@@ -107,6 +152,23 @@
     startMutationObserver();
     startCharacterDataObservers();
     startViewMonitor();
+  }
+
+  // ── Boot sequence ──────────────────────────────────────────────────────────
+  // 1. Load settings.js always (settings panel is not governed by MANIFEST)
+  // 2. Fetch /api/plugins for server defaults
+  // 3. Merge localStorage overrides
+  // 4. Load only the enabled plugins
+  // 5. Run onAllLoaded
+  function boot() {
+    loadScript('/static/plugins/settings.js', function () {
+      fetchPluginConfig(function (serverConfig) {
+        var enabled = resolveEnabled(serverConfig);
+        loadEnabledPlugins(enabled, function () {
+          onAllLoaded();
+        });
+      });
+    });
   }
 
   function startCharacterDataObservers() {
@@ -166,8 +228,8 @@
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', loadScripts);
+    document.addEventListener('DOMContentLoaded', boot);
   } else {
-    loadScripts();
+    boot();
   }
 })();

@@ -282,6 +282,39 @@ func (s *Service) Run(c *gin.Context) {
 	})
 }
 
+type PluginInfo struct {
+	Name        string `json:"name"`
+	Enabled     bool   `json:"enabled"`
+	Description string `json:"description"`
+}
+
+func (s *Service) APIPlugins(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"plugins": []PluginInfo{
+			{
+				Name:        "i18n-zh",
+				Enabled:     s.pluginsConfig.I18nZh,
+				Description: "界面中文汉化",
+			},
+			{
+				Name:        "source-fold",
+				Enabled:     s.pluginsConfig.SourceFold,
+				Description: "Source 视图函数折叠",
+			},
+		{
+			Name:        "peek-fold",
+			Enabled:     s.pluginsConfig.PeekFold,
+			Description: "Peek 视图分组折叠",
+		},
+		{
+			Name:        "graph-explain",
+			Enabled:     s.pluginsConfig.GraphExplain,
+			Description: "Graph 节点点击解释",
+		},
+	},
+	})
+}
+
 func (s *Service) Run1(c *gin.Context) {
 	uri := c.PostForm("url")
 	relativePath, size, err := s.uc.DealRun1(c.Request.Context(), uri)
