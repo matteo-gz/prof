@@ -17,10 +17,12 @@ import (
 )
 
 const (
-	RoutePprofPre = "/pprof"
-	RouteTracePre = "/trace"
-	RouteTrace    = RouteTracePre + "/%s/"
-	RoutePprof    = RoutePprofPre + "/%s/"
+	RoutePprofPre     = "/pprof"
+	RouteTracePre     = "/trace"
+	RoutePprofDiffPre = "/pprof-diff"
+	RouteTrace        = RouteTracePre + "/%s/"
+	RoutePprof        = RoutePprofPre + "/%s/"
+	RoutePprofDiff    = RoutePprofDiffPre + "/%s/%s/"
 )
 
 func (s *Service) Index(c *gin.Context) {
@@ -48,6 +50,22 @@ func (s *Service) Css(c *gin.Context) {
 	c.Data(http.StatusOK, "text/css; charset=utf-8", data)
 }
 
+func (s *Service) StaticFile(c *gin.Context) {
+	fp := c.Param("filepath")
+	data, err := web.StaticFS.ReadFile("static" + fp)
+	if err != nil {
+		c.String(http.StatusNotFound, "not found")
+		return
+	}
+	if strings.HasSuffix(fp, ".js") {
+		c.Data(http.StatusOK, "application/javascript; charset=utf-8", data)
+	} else if strings.HasSuffix(fp, ".css") {
+		c.Data(http.StatusOK, "text/css; charset=utf-8", data)
+	} else {
+		c.Data(http.StatusOK, "application/octet-stream", data)
+	}
+}
+
 func (s *Service) PersonCurl(c *gin.Context) {
 	c.Header("Content-Type", "text/html; charset=utf-8")
 	var buf bytes.Buffer
@@ -58,6 +76,22 @@ func (s *Service) PersonCurl(c *gin.Context) {
 	c.String(http.StatusOK, buf.String())
 }
 
+func isDateDir(dir string) bool {
+	base := dir
+	if idx := strings.LastIndex(dir, "/"); idx >= 0 {
+		base = dir[idx+1:]
+	}
+	if len(base) != 8 {
+		return false
+	}
+	for _, c := range base {
+		if c < '0' || c > '9' {
+			return false
+		}
+	}
+	return true
+}
+
 func (s *Service) FileList(c *gin.Context) {
 	dir := c.Query("dir")
 	lists, files, _ := s.uc.GetFileList(dir)
@@ -65,6 +99,12 @@ func (s *Service) FileList(c *gin.Context) {
 		"list":  lists,
 		"dir":   dir,
 		"files": files,
+	}
+	if isDateDir(dir) {
+		if groups, err := s.uc.GetBatchGroups(dir); err == nil && len(groups) > 0 {
+			data["groups"] = groups
+			data["list"] = nil
+		}
 	}
 	c.Header("Content-Type", "text/html; charset=utf-8")
 	var buf bytes.Buffer
@@ -116,6 +156,15 @@ func (s *Service) File(c *gin.Context) {
 	}
 }
 
+const pluginLoaderTag = `<script src="/static/plugins/loader.js"></script>`
+
+func injectPlugins(body string) string {
+	if idx := strings.Index(body, "</head>"); idx >= 0 {
+		return body[:idx] + pluginLoaderTag + body[idx:]
+	}
+	return body
+}
+
 func newUri(c *gin.Context) biz.Uri {
 	return biz.Uri{
 		Path:  c.Request.URL.Path,
@@ -130,10 +179,28 @@ func (s *Service) PprofProxy(c *gin.Context) {
 	u.ProxyBasePath = "/ui/"
 	u.ReBody = func(body string, currPath string) string {
 		body = strings.ReplaceAll(body, "href=\"./", "href=\""+currPath)
+		body = injectPlugins(body)
 		return body
 	}
 	s.log.Debugf("%#v", u)
 	err := s.uc.Proxy(u, c.Writer, c.Request)
+	if err != nil {
+		c.String(404, err.Error())
+	}
+}
+
+func (s *Service) PprofDiffProxy(c *gin.Context) {
+	u := newUri(c)
+	u.Base = c.Param("base")
+	u.Route = RoutePprofDiff
+	u.ProxyBasePath = "/ui/"
+	u.ReBody = func(body string, currPath string) string {
+		body = strings.ReplaceAll(body, "href=\"./", "href=\""+currPath)
+		body = injectPlugins(body)
+		return body
+	}
+	s.log.Debugf("%#v", u)
+	err := s.uc.ProxyDiff(u, c.Writer, c.Request)
 	if err != nil {
 		c.String(404, err.Error())
 	}
@@ -199,30 +266,68 @@ func (s *Service) Run(c *gin.Context) {
 		return
 	}
 	var res2 []string
+	var files []biz.FileResult
 	for i := range res {
 		if res[i].E != nil {
 			res2 = append(res2, res[i].E.Error())
 		} else {
 			res2 = append(res2, res[i].S)
+			files = append(files, biz.FileResult{Path: res[i].S, Size: res[i].Size})
 		}
 	}
 	c.JSON(200, gin.H{
-		"id":  time.Now().UnixMilli(),
-		"res": res2,
+		"id":    time.Now().UnixMilli(),
+		"res":   res2,
+		"files": files,
+	})
+}
+
+type PluginInfo struct {
+	Name        string `json:"name"`
+	Enabled     bool   `json:"enabled"`
+	Description string `json:"description"`
+}
+
+func (s *Service) APIPlugins(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"plugins": []PluginInfo{
+			{
+				Name:        "i18n-zh",
+				Enabled:     s.pluginsConfig.I18nZh,
+				Description: "界面中文汉化",
+			},
+			{
+				Name:        "source-fold",
+				Enabled:     s.pluginsConfig.SourceFold,
+				Description: "Source 视图函数折叠",
+			},
+		{
+			Name:        "peek-fold",
+			Enabled:     s.pluginsConfig.PeekFold,
+			Description: "Peek 视图分组折叠",
+		},
+		{
+			Name:        "graph-explain",
+			Enabled:     s.pluginsConfig.GraphExplain,
+			Description: "Graph 节点点击解释",
+		},
+	},
 	})
 }
 
 func (s *Service) Run1(c *gin.Context) {
 	uri := c.PostForm("url")
-	relativePath, err := s.uc.DealRun1(c.Request.Context(), uri)
-	var res string
+	relativePath, size, err := s.uc.DealRun1(c.Request.Context(), uri)
 	if err != nil {
-		res = err.Error()
-	} else {
-		res = relativePath
+		c.JSON(200, gin.H{
+			"id":  time.Now().UnixMilli(),
+			"res": []string{err.Error()},
+		})
+		return
 	}
 	c.JSON(200, gin.H{
-		"id":  time.Now().UnixMilli(),
-		"res": []string{res},
+		"id":    time.Now().UnixMilli(),
+		"res":   []string{relativePath},
+		"files": []biz.FileResult{{Path: relativePath, Size: size}},
 	})
 }

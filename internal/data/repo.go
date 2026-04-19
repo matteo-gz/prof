@@ -26,11 +26,43 @@ func (rp *repo) GetPortByDir(relPath string) (port int, err error) {
 	}
 	return rp.data.task.getPortByDir(dir)
 }
+
+func (rp *repo) GetBatchGroups(date string) (groups []biz.BatchGroup, err error) {
+	dirs, _, err := rp.GetFileList(date)
+	if err != nil {
+		return
+	}
+	for _, d := range dirs {
+		subDir := date + "/" + d
+		_, subFiles, err2 := rp.GetFileList(subDir)
+		if err2 != nil || len(subFiles) == 0 {
+			continue
+		}
+		groups = append(groups, biz.BatchGroup{
+			Label: d,
+			Dir:   subDir,
+			Files: subFiles,
+		})
+	}
+	return
+}
+
+func (rp *repo) GetPortByDiff(baseFile, compareFile string) (port int, err error) {
+	base := rp.data.file.getAbsDir(baseFile)
+	compare := rp.data.file.getAbsDir(compareFile)
+	if !filex.IsFileExist(base) {
+		return 0, errors.New("base file not exist")
+	}
+	if !filex.IsFileExist(compare) {
+		return 0, errors.New("compare file not exist")
+	}
+	return rp.data.task.getPortByDiff(base, compare)
+}
 func (rp *repo) GetAbsDir(relPath string) string {
 	return rp.data.file.getAbsDir(relPath)
 }
 
-func (rp *repo) GetFileList(date string) (list, files []string, err error) {
+func (rp *repo) GetFileList(date string) (list []string, files []biz.FileInfo, err error) {
 	return rp.data.file.getFileList(date)
 }
 func (rp *repo) GetFileType(dir string) string {

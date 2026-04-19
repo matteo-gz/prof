@@ -30,14 +30,16 @@
     <div id="result3"></div>
 </div>
 
+{{template "storageKeys" .}}
 <script>
-    var STORAGE_KEY = "prof:history";
     var resultEl = document.querySelector("#result3");
     var clearBtn = document.querySelector("#clear");
 
     function badgeClass(act) {
-        if (act === "curl batch") return "bg-primary";
-        if (act === "curl one") return "bg-info text-dark";
+        if (act === "batch" || act === "curl batch") return "bg-primary";
+        if (act === "fetch-one" || act === "curl one") return "bg-info text-dark";
+        if (act === "fetch-url" || act === "curl url") return "bg-secondary";
+        if (act === "upload") return "bg-success";
         return "bg-success";
     }
 
@@ -99,6 +101,20 @@
             left.appendChild(time);
             header.appendChild(left);
 
+            if (obj.act === "batch" && obj.params) {
+                var rerunBtn = document.createElement("button");
+                rerunBtn.type = "button";
+                rerunBtn.className = "btn btn-outline-primary btn-sm py-0 px-2 me-1";
+                rerunBtn.textContent = "Re-run";
+                (function(params) {
+                    rerunBtn.addEventListener("click", function () {
+                        localStorage.setItem("prof:rerun", JSON.stringify(params));
+                        window.location.href = "/";
+                    });
+                })(obj.params);
+                header.appendChild(rerunBtn);
+            }
+
             var delBtn = document.createElement("button");
             delBtn.type = "button";
             delBtn.className = "btn btn-outline-danger btn-sm py-0 px-2";
@@ -113,8 +129,31 @@
             body.className = "card-body py-2";
             var nameEl = document.createElement("div");
             nameEl.className = "small text-muted mb-1";
-            nameEl.textContent = obj.name || "";
+            nameEl.textContent = obj.source || obj.name || "";
             body.appendChild(nameEl);
+
+            if (obj.act === "batch" && obj.params) {
+                var p = obj.params;
+                var paramSummary = [];
+                if (p.types && p.types.length > 0) {
+                    paramSummary.push("类型: " + p.types.join(", "));
+                }
+                if (p.samplingSeconds) {
+                    paramSummary.push("CPU " + p.samplingSeconds + "s");
+                }
+                if (p.snapshotMode === "delta" && p.deltaSeconds) {
+                    paramSummary.push("Delta " + p.deltaSeconds + "s");
+                }
+                if (p.traceEnabled && p.traceSeconds) {
+                    paramSummary.push("Trace " + p.traceSeconds + "s");
+                }
+                if (paramSummary.length > 0) {
+                    var paramEl = document.createElement("div");
+                    paramEl.className = "small text-muted mb-1";
+                    paramEl.textContent = paramSummary.join(" · ");
+                    body.insertBefore(paramEl, nameEl.nextSibling);
+                }
+            }
 
             var paths = obj.paths || [];
             if (paths.length > 0) {

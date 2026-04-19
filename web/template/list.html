@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Prof - Files</title>
     <link href="/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+    <script src="/static/prof-i18n.js"></script>
     <style>
         body { background-color: #f8f9fa; }
         .navbar-brand { font-weight: 600; letter-spacing: 0.5px; }
@@ -18,9 +19,9 @@
     <div class="container">
         <a class="navbar-brand" href="/">Prof</a>
         <ul class="navbar-nav">
-            <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
-            <li class="nav-item"><a class="nav-link active" href="/history">Files</a></li>
-            <li class="nav-item"><a class="nav-link" href="/person/curl">History</a></li>
+            <li class="nav-item"><a class="nav-link" href="/" data-i18n="nav.home">Home</a></li>
+            <li class="nav-item"><a class="nav-link active" href="/history" data-i18n="nav.files">Files</a></li>
+            <li class="nav-item"><a class="nav-link" href="/person/curl" data-i18n="nav.history">History</a></li>
         </ul>
     </div>
 </nav>
@@ -35,7 +36,7 @@
 
     {{if .list}}
     <div class="card mb-3">
-        <div class="card-header py-2 small text-muted">Directories</div>
+        <div class="card-header py-2 small text-muted" data-i18n="list.directories">Directories</div>
         <ul class="list-group list-group-flush">
             {{range $_ := .list}}
             <li class="list-group-item file-item py-2">
@@ -47,14 +48,39 @@
     </div>
     {{end}}
 
+    {{if .groups}}
+    <div id="batchGroups">
+        {{range .groups}}
+        {{$groupDir := .Dir}}
+        <div class="card mb-2">
+            <div class="card-header py-2 d-flex align-items-center gap-2">
+                <span class="fw-semibold text-secondary small">&#128336;</span>
+                <span class="fw-semibold">{{fmtBatchTime .Label}}</span>
+                <span class="text-muted small ms-1">{{len .Files}} 个文件</span>
+            </div>
+            <ul class="list-group list-group-flush">
+                {{range .Files}}
+                <li class="list-group-item file-item py-2 d-flex align-items-center gap-2" data-size="{{.Size}}" data-name="{{.Name}}" data-path="{{$groupDir}}/{{.Name}}">
+                    <span class="file-icon">&#128196;</span>
+                    <a target="_blank" href="/file?dir={{$groupDir}}/{{.Name}}">{{.Name}}</a>
+                    <span class="text-muted small ms-auto file-size"></span>
+                </li>
+                {{end}}
+            </ul>
+        </div>
+        {{end}}
+    </div>
+    {{end}}
+
     {{if .files}}
     <div class="card">
-        <div class="card-header py-2 small text-muted">Files</div>
+        <div class="card-header py-2 small text-muted" data-i18n="list.files">Files</div>
         <ul class="list-group list-group-flush" id="fileList">
             {{range $_ := .files}}
-            <li class="list-group-item file-item py-2">
+            <li class="list-group-item file-item py-2 d-flex align-items-center gap-2" data-size="{{.Size}}" data-name="{{.Name}}" data-path="{{$dir}}/{{.Name}}">
                 <span class="file-icon">&#128196;</span>
-                <a target="_blank" href="/file?dir={{$dir}}/{{.}}">{{.}}</a>
+                <a target="_blank" href="/file?dir={{$dir}}/{{.Name}}">{{.Name}}</a>
+                <span class="text-muted small ms-auto file-size"></span>
             </li>
             {{end}}
         </ul>
@@ -62,7 +88,69 @@
     {{end}}
 </div>
 
+<!-- 对比篮浮动栏：跨目录持久，localStorage 驱动 -->
+<div id="diffBar" class="position-fixed bottom-0 start-0 end-0 bg-white border-top shadow d-none" style="z-index:1050">
+    <div class="container py-2 d-flex align-items-center gap-2 flex-wrap">
+        <span class="small" id="diffStatus"></span>
+        <div class="ms-auto d-flex gap-2">
+            <button id="diffGoBtn" class="btn btn-primary btn-sm" disabled data-i18n="diff.compare">Diff 对比</button>
+            <button id="diffClearBtn" class="btn btn-outline-secondary btn-sm" data-i18n="diff.clear">清除</button>
+        </div>
+    </div>
+</div>
+
+<div style="height:56px" id="diffBarSpacer" class="d-none"></div>
+
 <script>
+    function formatSize(bytes) {
+        if (!bytes || bytes <= 0) return "";
+        if (bytes < 1024) return bytes + " B";
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+        return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+    }
+
+    function fileBadge(name) {
+        var sp = document.createElement("span");
+        sp.className = "badge me-1";
+        var base = name.replace(/\.[^.]+$/, "");
+        if (name.endsWith(".trace")) {
+            sp.className += " bg-info text-dark";
+            sp.textContent = "Trace";
+        } else if (name.endsWith(".pprof")) {
+            if (base === "profile") {
+                sp.className += " bg-danger";
+                sp.textContent = "CPU Profile";
+            } else if (base === "goroutine") {
+                sp.className += " bg-warning text-dark";
+                sp.textContent = "Goroutine";
+            } else if (base === "heap") {
+                sp.className += " bg-success";
+                sp.textContent = "Heap";
+            } else if (base === "allocs") {
+                sp.className += " bg-success";
+                sp.textContent = "Allocs";
+            } else if (base === "block") {
+                sp.className += " bg-secondary";
+                sp.textContent = "Block";
+            } else if (base === "mutex") {
+                sp.className += " bg-secondary";
+                sp.textContent = "Mutex";
+            } else if (base === "threadcreate") {
+                sp.className += " bg-secondary";
+                sp.textContent = "Thread";
+            } else {
+                sp.className += " bg-primary";
+                sp.textContent = "pprof";
+            }
+        } else if (name.endsWith(".txt")) {
+            sp.className += " bg-light text-dark border";
+            sp.textContent = "Meta";
+        } else {
+            return null;
+        }
+        return sp;
+    }
+
     (function () {
         var dir = "{{$dir}}";
         if (!dir) return;
@@ -86,30 +174,151 @@
             bc.appendChild(li);
         }
 
-        var fl = document.getElementById("fileList");
-        if (!fl) return;
-        var items = fl.querySelectorAll("li");
+        var items = document.querySelectorAll("li[data-name]");
         for (var j = 0; j < items.length; j++) {
             var link = items[j].querySelector("a");
             if (!link) continue;
-            var name = link.textContent;
-            var sp = document.createElement("span");
-            sp.className = "badge me-1";
-            if (name.endsWith(".trace")) {
-                sp.className += " bg-info text-dark";
-                sp.textContent = "Trace Viewer";
-            } else if (name.endsWith(".pprof")) {
-                sp.className += " bg-primary";
-                sp.textContent = "pprof";
-            } else if (name.endsWith(".txt")) {
-                sp.className += " bg-secondary";
-                sp.textContent = "text";
-            } else {
-                continue;
+            var name = items[j].getAttribute("data-name") || link.textContent;
+            var badge = fileBadge(name);
+            if (badge) items[j].insertBefore(badge, link);
+
+            var sizeEl = items[j].querySelector(".file-size");
+            if (sizeEl) {
+                var bytes = parseInt(items[j].getAttribute("data-size"), 10);
+                var sz = formatSize(bytes);
+                if (sz) sizeEl.textContent = sz;
             }
-            items[j].insertBefore(sp, link);
         }
     })();
+
+    // ---- 对比篮：跨目录 diff，localStorage 持久化 ----
+    (function () {
+        var STORAGE_KEY = 'prof:diff:basket';
+        var diffBar    = document.getElementById("diffBar");
+        var diffSpacer = document.getElementById("diffBarSpacer");
+        var diffStatus = document.getElementById("diffStatus");
+        var diffGoBtn  = document.getElementById("diffGoBtn");
+        var diffClearBtn = document.getElementById("diffClearBtn");
+
+        // ---- 篮子操作 ----
+        function getBasket() {
+            try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+            catch(e) { return []; }
+        }
+        function saveBasket(b) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(b));
+        }
+        function isInBasket(path) {
+            return getBasket().some(function(f){ return f.path === path; });
+        }
+        function toggleBasket(path, name) {
+            var b = getBasket();
+            var idx = -1;
+            for (var i = 0; i < b.length; i++) { if (b[i].path === path) { idx = i; break; } }
+            if (idx >= 0) {
+                b.splice(idx, 1);
+            } else {
+                if (b.length >= 2) return;
+                b.push({ path: path, name: name });
+            }
+            saveBasket(b);
+        }
+
+        // ---- 渲染浮动栏 ----
+        function renderBar() {
+            var b = getBasket();
+            renderFileButtons();
+            if (b.length === 0) {
+                diffBar.classList.add("d-none");
+                diffSpacer.classList.add("d-none");
+                return;
+            }
+            diffBar.classList.remove("d-none");
+            diffSpacer.classList.remove("d-none");
+            if (b.length === 1) {
+                diffStatus.innerHTML = '<span class="badge bg-primary me-1">1/2</span>' +
+                    '<span class="fw-semibold">' + escHtml(b[0].name) + '</span>' +
+                    '<span class="text-muted ms-2">' + t('diff.selectSecond') + '</span>';
+                diffGoBtn.disabled = true;
+            } else {
+                diffStatus.innerHTML = '<span class="badge bg-success me-1">2/2</span>' +
+                    '<span class="fw-semibold">' + escHtml(b[0].name) + '</span>' +
+                    '<span class="text-muted mx-1">' + t('diff.vs') + '</span>' +
+                    '<span class="fw-semibold">' + escHtml(b[1].name) + '</span>';
+                diffGoBtn.disabled = false;
+            }
+            renderFileButtons();
+        }
+
+        function escHtml(s) {
+            return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+
+        // ---- 给当前页 .pprof 文件行注入「加入对比」按钮 ----
+        function renderFileButtons() {
+            var items = document.querySelectorAll("li[data-name]");
+            for (var i = 0; i < items.length; i++) {
+                var name = items[i].getAttribute("data-name");
+                if (!name || !name.endsWith(".pprof")) continue;
+                var path = items[i].getAttribute("data-path");
+                var btn = items[i].querySelector(".diff-add-btn");
+                var inBasket = isInBasket(path);
+                var basketFull = getBasket().length >= 2 && !inBasket;
+                if (!btn) {
+                    btn = document.createElement("button");
+                    btn.className = "diff-add-btn btn btn-sm ms-1 flex-shrink-0";
+                    btn.style.padding = "1px 7px";
+                    btn.title = "加入 Diff 对比";
+                    var sizeEl = items[i].querySelector(".file-size");
+                    if (sizeEl) {
+                        items[i].insertBefore(btn, sizeEl);
+                    } else {
+                        items[i].appendChild(btn);
+                    }
+                    (function(p, n, b) {
+                        b.addEventListener("click", function(e) {
+                            e.preventDefault();
+                            toggleBasket(p, n);
+                            renderBar();
+                        });
+                    })(path, name, btn);
+                }
+                if (inBasket) {
+                    btn.textContent = t('diff.selected');
+                    btn.className = "diff-add-btn btn btn-sm btn-success ms-1 flex-shrink-0";
+                } else if (basketFull) {
+                    btn.textContent = t('diff.addCompare');
+                    btn.className = "diff-add-btn btn btn-sm btn-outline-secondary ms-1 flex-shrink-0";
+                    btn.disabled = true;
+                } else {
+                    btn.textContent = t('diff.addCompare');
+                    btn.className = "diff-add-btn btn btn-sm btn-outline-primary ms-1 flex-shrink-0";
+                    btn.disabled = false;
+                }
+            }
+        }
+
+        // ---- 事件 ----
+        diffGoBtn && diffGoBtn.addEventListener("click", function () {
+            var b = getBasket();
+            if (b.length !== 2) return;
+            var base    = btoa(unescape(encodeURIComponent(b[0].path)));
+            var compare = btoa(unescape(encodeURIComponent(b[1].path)));
+            var url = "/pprof-diff/" + encodeURIComponent(base) + "/" + encodeURIComponent(compare) + "/";
+            var a = document.createElement("a");
+            a.href = url; a.target = "_blank"; a.rel = "noopener noreferrer";
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        });
+
+        diffClearBtn && diffClearBtn.addEventListener("click", function () {
+            saveBasket([]);
+            renderBar();
+        });
+
+        // ---- 初始化 ----
+        renderBar();
+    })();
 </script>
+<script src="/static/plugins/loader.js"></script>
 </body>
 </html>

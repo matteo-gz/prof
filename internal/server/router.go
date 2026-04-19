@@ -48,11 +48,17 @@ func (h *HTTPServerX) router() (r *gin.Engine, err error) {
 	r.GET("/file", h.srv.File)
 	r.GET(service.RoutePprofPre+"/:dir/*any", h.srv.PprofProxy)
 	r.GET(service.RouteTracePre+"/:dir/*any", h.srv.TraceProxy)
+	r.GET(service.RoutePprofDiffPre+"/:base/:dir/*any", h.srv.PprofDiffProxy)
 	r.GET("/person/curl", h.srv.PersonCurl)
 	r.GET("/bootstrap.min.css", h.srv.Css)
+	r.GET("/static/*filepath", h.srv.StaticFile)
 	r.POST("/opt/upload", h.srv.Upload)
 	r.POST("/opt/run", h.srv.Run)
 	r.POST("/opt/run1", h.srv.Run1)
+	api := r.Group("/api")
+	{
+		api.GET("/plugins", h.srv.APIPlugins)
+	}
 	return
 }
 

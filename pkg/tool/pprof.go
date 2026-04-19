@@ -27,6 +27,11 @@ func newPprofX() *pprofX {
 
 type ArgPprofX struct {
 	commonArg
+	baseFile string
+}
+
+func (pa *ArgPprofX) SetBaseFile(file string) {
+	pa.baseFile = file
 }
 
 func (pa ArgPprofX) build() (s []string) {
@@ -34,8 +39,11 @@ func (pa ArgPprofX) build() (s []string) {
 		pa.name,
 		"-no_browser=true",
 		fmt.Sprintf(HTTPTpl, pa.port),
-		pa.file,
 	}
+	if pa.baseFile != "" {
+		s = append(s, "-base", pa.baseFile)
+	}
+	s = append(s, pa.file)
 	return
 }
 func (pa ArgPprofX) AppendEnv(s []string) []string {

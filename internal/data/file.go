@@ -2,12 +2,15 @@ package data
 
 import (
 	"fmt"
-	"github.com/go-kratos/kratos/v2/log"
-	"github.com/matteo-gz/prof/pkg/filex"
-	"github.com/matteo-gz/prof/pkg/pproftype"
 	"os"
 	"path"
+	"sort"
 	"strings"
+
+	"github.com/go-kratos/kratos/v2/log"
+	"github.com/matteo-gz/prof/internal/biz"
+	"github.com/matteo-gz/prof/pkg/filex"
+	"github.com/matteo-gz/prof/pkg/pproftype"
 )
 
 type file struct {
@@ -49,7 +52,7 @@ func getFileType(dir string) (fileType string) {
 		return pproftype.ExtUnknown
 	}
 }
-func (f *file) getFileList(date string) (list, files []string, err error) {
+func (f *file) getFileList(date string) (list []string, files []biz.FileInfo, err error) {
 	final := f.getAbsDir(date)
 	f1, err := os.OpenFile(final, os.O_RDONLY, os.ModeDir)
 	if err != nil {
@@ -60,12 +63,13 @@ func (f *file) getFileList(date string) (list, files []string, err error) {
 	if err != nil {
 		return
 	}
-	for _, fileInfo := range info {
-		if fileInfo.IsDir() {
-			list = append(list, fileInfo.Name())
+	for _, fi := range info {
+		if fi.IsDir() {
+			list = append(list, fi.Name())
 		} else {
-			files = append(files, fileInfo.Name())
+			files = append(files, biz.FileInfo{Name: fi.Name(), Size: fi.Size()})
 		}
 	}
+	sort.Sort(sort.Reverse(sort.StringSlice(list)))
 	return list, files, nil
 }

@@ -17,8 +17,16 @@ type App struct {
 	DeltaSeconds     int    `yaml:"DeltaSeconds"`
 	TraceSeconds     int    `yaml:"TraceSeconds"`
 }
+type PluginsConfig struct {
+	I18nZh       bool `yaml:"i18n_zh"`
+	SourceFold   bool `yaml:"source_fold"`
+	PeekFold     bool `yaml:"peek_fold"`
+	GraphExplain bool `yaml:"graph_explain"`
+}
+
 type Bs struct {
-	Server *Server `yaml:"Server"`
-	Data   *Data   `yaml:"Data"`
-	App    *App    `yaml:"App"`
+	Server  *Server        `yaml:"Server"`
+	Data    *Data          `yaml:"Data"`
+	App     *App           `yaml:"App"`
+	Plugins *PluginsConfig `yaml:"Plugins"`
 }

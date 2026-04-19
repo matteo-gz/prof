@@ -132,25 +132,33 @@ func (b *batch) Start(ctx context.Context, fn saveFile) (res []Cse, err error) {
 	return
 }
 
-// Cse combines a string result and an error.
+// Cse combines a string result, file size, and an error.
 type Cse struct {
-	S string
-	E error
+	S    string
+	Size int64
+	E    error
+}
+
+// FileResult holds path and size for a successfully fetched file.
+type FileResult struct {
+	Path string `json:"path"`
+	Size int64  `json:"size"`
 }
 
 func (b *batch) run(ctx context.Context, task urlTask, ch chan Cse, wg *sync.WaitGroup, fn saveFile) {
 	defer wg.Done()
 	data, contentType, err := curlGet(ctx, task.url, task.timeout)
 	if err != nil {
-		ch <- Cse{"", err}
+		ch <- Cse{"", 0, err}
 		return
 	}
+	size := int64(len(data))
 	relativePath, err := fn(task.url, contentType, data)
 	if err != nil {
-		ch <- Cse{"", err}
+		ch <- Cse{"", 0, err}
 		return
 	}
-	ch <- Cse{relativePath, nil}
+	ch <- Cse{relativePath, size, nil}
 }
 
 func (uc *Usecase) DealRun(ctx context.Context, p BatchParams) (res []Cse, err error) {

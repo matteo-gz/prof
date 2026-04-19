@@ -48,9 +48,10 @@ func newTask(logger log.Logger) *task {
 	go t.Timer()
 	return t
 }
-func newProxy(dir string, l *log.Helper) *Proxy {
+func newProxy(dir string, baseFile string, l *log.Helper) *Proxy {
 	return &Proxy{
 		dir:      dir,
+		baseFile: baseFile,
 		fileType: getFileType(dir),
 		lifeTime: proxyLifetime,
 		log:      l,
