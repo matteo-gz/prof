@@ -236,9 +236,28 @@
     </div>
 </div>
 
+{{template "storageKeys" .}}
 <script>
     var locks = {};
-    var STORAGE_KEY = "prof:history";
+
+    function loadPrefs() {
+        try {
+            var raw = localStorage.getItem(PREFS_KEY);
+            return raw ? JSON.parse(raw) : null;
+        } catch (e) { return null; }
+    }
+
+    function savePrefs() {
+        var prefs = {
+            sampling_seconds: parseInt(document.querySelector('input[name="sampling_seconds"]').value) || null,
+            trace_seconds:    parseInt(document.querySelector('input[name="trace_seconds"]').value) || null,
+            delta_seconds:    parseInt(document.querySelector('input[name="delta_seconds"]').value) || null,
+            snapshot_mode:    document.querySelector('input[name="snapshot_mode"]:checked').value,
+            trace_enabled:    document.querySelector('#traceEnabled').checked,
+            selected_types:   Array.from(document.querySelectorAll('.pprof-type-cb:checked')).map(function(cb){ return cb.value; })
+        };
+        try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch(e) {}
+    }
 
     function formatSize(bytes) {
         if (!bytes || bytes <= 0) return "";
@@ -386,7 +405,7 @@
             });
     }
 
-    function fetchProfileFromUrl(u, endpoint, resultEl, lockKey, actLabel, btn) {
+    function fetchProfileFromUrl(u, endpoint, resultEl, lockKey, actLabel, btn, params) {
         if (locks[lockKey]) { return; }
         if (!u) {
             showError(resultEl, "Please enter a URL");
@@ -413,7 +432,7 @@
                 setButtonLoading(btn, false);
                 resultEl.textContent = "";
                 resultEl.appendChild(buildResultList(data.res, data.files));
-                store(data.id, data.res, u, actLabel);
+                store(data.id, data.res, u, actLabel, params || null);
             })
             .catch(function (error) {
                 window.clearInterval(itv);
@@ -453,7 +472,7 @@
                 setButtonLoading(btn, false);
                 resultUpload.textContent = "";
                 resultUpload.appendChild(buildResultList(data.res, data.files));
-                store(data.id, data.res, ff.name, "upload");
+                store(data.id, data.res, ff.name, "upload", null);
                 document.querySelector('input[name="file"]').value = "";
             })
             .catch(function (error) {
@@ -463,7 +482,7 @@
             });
     }
 
-    function store(index, paths, name, act) {
+    function store(index, paths, source, act, params) {
         var res = localStorage.getItem(STORAGE_KEY);
         var a = [];
         if (res !== null) {
@@ -472,11 +491,12 @@
         a.push(index);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(a));
         var obj = {
-            index: index,
-            paths: paths,
-            name: name,
-            act: act,
-            now: getNowTime()
+            index:  index,
+            paths:  paths,
+            source: source,
+            act:    act,
+            params: params || null,
+            now:    getNowTime()
         };
         localStorage.setItem("prof:" + index, JSON.stringify(obj));
     }
@@ -591,6 +611,86 @@
 
     syncSections();
 
+    (function applyPrefs() {
+        var p = loadPrefs();
+        if (!p) return;
+
+        if (p.sampling_seconds) {
+            document.querySelector('input[name="sampling_seconds"]').value = p.sampling_seconds;
+        }
+        if (p.trace_seconds) {
+            document.querySelector('input[name="trace_seconds"]').value = p.trace_seconds;
+        }
+        if (p.delta_seconds) {
+            document.querySelector('input[name="delta_seconds"]').value = p.delta_seconds;
+        }
+        if (p.snapshot_mode) {
+            var r = document.querySelector('input[name="snapshot_mode"][value="' + p.snapshot_mode + '"]');
+            if (r) {
+                r.checked = true;
+                r.dispatchEvent(new Event('change'));
+            }
+        }
+        if (typeof p.trace_enabled === 'boolean') {
+            var tc = document.querySelector('#traceEnabled');
+            tc.checked = p.trace_enabled;
+            tc.dispatchEvent(new Event('change'));
+        }
+        if (Array.isArray(p.selected_types) && p.selected_types.length > 0) {
+            document.querySelectorAll('.pprof-type-cb').forEach(function(cb) {
+                cb.checked = p.selected_types.indexOf(cb.value) !== -1;
+            });
+            syncSections();
+        }
+    })();
+
+    (function applyRerun() {
+        var raw = localStorage.getItem("prof:rerun");
+        if (!raw) return;
+        localStorage.removeItem("prof:rerun");
+        var p;
+        try { p = JSON.parse(raw); } catch(e) { return; }
+
+        if (p.url) document.querySelector('input[name="url"]').value = p.url;
+        if (p.samplingSeconds) document.querySelector('input[name="sampling_seconds"]').value = p.samplingSeconds;
+        if (p.traceSeconds) document.querySelector('input[name="trace_seconds"]').value = p.traceSeconds;
+        if (p.deltaSeconds) document.querySelector('input[name="delta_seconds"]').value = p.deltaSeconds;
+        if (p.snapshotMode) {
+            var r = document.querySelector('input[name="snapshot_mode"][value="' + p.snapshotMode + '"]');
+            if (r) { r.checked = true; r.dispatchEvent(new Event('change')); }
+        }
+        if (typeof p.traceEnabled === 'boolean') {
+            var tc = document.querySelector('#traceEnabled');
+            tc.checked = p.traceEnabled;
+            tc.dispatchEvent(new Event('change'));
+        }
+        if (Array.isArray(p.types) && p.types.length > 0) {
+            document.querySelectorAll('.pprof-type-cb').forEach(function(cb) {
+                cb.checked = p.types.indexOf(cb.value) !== -1;
+            });
+            if (typeof syncSections === 'function') syncSections();
+        }
+        document.querySelector('#fetchdata') && document.querySelector('#fetchdata').scrollIntoView({ behavior: 'smooth' });
+    })();
+
+    ['input[name="sampling_seconds"]',
+     'input[name="trace_seconds"]',
+     'input[name="delta_seconds"]']
+    .forEach(function(sel) {
+        var el = document.querySelector(sel);
+        if (el) el.addEventListener('input', savePrefs);
+    });
+
+    document.querySelectorAll('input[name="snapshot_mode"]').forEach(function(r) {
+        r.addEventListener('change', savePrefs);
+    });
+
+    document.querySelector('#traceEnabled').addEventListener('change', savePrefs);
+
+    document.querySelectorAll('.pprof-type-cb').forEach(function(cb) {
+        cb.addEventListener('change', savePrefs);
+    });
+
     function fetchBatch(btn) {
         if (locks["run"]) { return; }
 
@@ -638,7 +738,15 @@
                 setButtonLoading(btn, false);
                 resultBatch.textContent = "";
                 resultBatch.appendChild(buildResultList(data.res, data.files));
-                store(data.id, data.res, u, "curl batch");
+                store(data.id, data.res, u, "batch", {
+                    url:             u,
+                    samplingSeconds: sampSec,
+                    snapshotMode:    snapMode,
+                    deltaSeconds:    deltaSec,
+                    traceEnabled:    traceOn,
+                    traceSeconds:    traceSec,
+                    types:           selectedTypes
+                });
                 document.querySelector('input[name="url"]').value = "";
             })
             .catch(function (error) {
@@ -658,7 +766,7 @@
             showError(resultOne, "Please enter a Base URL");
             return;
         }
-        fetchProfileFromUrl(u, "/opt/run1", resultOne, "run1", "curl one", this);
+        fetchProfileFromUrl(u, "/opt/run1", resultOne, "run1", "fetch-one", this, { url: u });
     });
     document.querySelector("#subf").addEventListener("click", upload);
 
@@ -832,7 +940,7 @@
     document.querySelector("#fetchdataManual").addEventListener("click", function () {
         var u = document.querySelector('input[name="url_manual"]').value;
         if (!u) { showError(resultManual, "Please enter a URL"); return; }
-        fetchProfileFromUrl(u, "/opt/run1", resultManual, "run1_manual", "curl url", this);
+        fetchProfileFromUrl(u, "/opt/run1", resultManual, "run1_manual", "fetch-url", this, { url: u });
     });
 
     var demoBase = "http://127.0.0.1:{{.Port2}}/internal/debug/pprof";
