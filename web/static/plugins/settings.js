@@ -1,6 +1,21 @@
 (function () {
   'use strict';
 
+  var _settingsI18n = {};
+  (function () {
+    var lang = localStorage.getItem('prof-lang') || 'zh';
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/static/i18n/' + lang + '.json', false); // async=false intentional: local tool
+    try {
+      xhr.send();
+      if (xhr.status === 200) _settingsI18n = JSON.parse(xhr.responseText);
+    } catch (e) {}
+  })();
+
+  function st(key, fallback) {
+    return _settingsI18n[key] !== undefined ? _settingsI18n[key] : fallback;
+  }
+
   // Returns { container, mode } where mode is 'pprof' or 'navbar'
   function findHeader() {
     var pprofHeader = document.querySelector('.header');
@@ -97,12 +112,12 @@
   }
 
   function renderPanel(panel, plugins) {
-    panel.innerHTML = '<div style="font-weight:600;margin-bottom:10px;font-size:14px">Prof 插件</div>';
+    panel.innerHTML = '<div style="font-weight:600;margin-bottom:10px;font-size:14px">' + st('settings.title', 'Prof 插件') + '</div>';
 
     if (plugins.length === 0) {
       var empty = document.createElement('div');
       empty.style.cssText = 'color:#999;font-size:12px;';
-      empty.textContent = '暂无插件';
+      empty.textContent = st('settings.noPlugins', '暂无插件');
       panel.appendChild(empty);
       return;
     }
@@ -116,7 +131,7 @@
       row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin:6px 0;gap:12px;';
 
       var label = document.createElement('span');
-      label.textContent = p.description || p.name;
+      label.textContent = st('plugin.' + p.name, p.description || p.name);
       label.style.cssText = 'flex:1;';
 
       var toggle = document.createElement('input');
@@ -195,15 +210,15 @@
       localStorage.setItem(configKey, JSON.stringify(cfg));
     }
 
-    container.appendChild(makeSubRow('折叠 std（标准库）', cfg.collapseStdlib, function (v) {
+    container.appendChild(makeSubRow(st('source-fold.collapseStdlib', '折叠 std（标准库）'), cfg.collapseStdlib, function (v) {
       cfg.collapseStdlib = v;
       saveConfig();
     }));
-    container.appendChild(makeSubRow('折叠 mod（第三方）', cfg.collapseThirdParty, function (v) {
+    container.appendChild(makeSubRow(st('source-fold.collapseThirdParty', '折叠 mod（第三方）'), cfg.collapseThirdParty, function (v) {
       cfg.collapseThirdParty = v;
       saveConfig();
     }));
-    container.appendChild(makeSubRow('折叠全部', cfg.collapseAll, function (v) {
+    container.appendChild(makeSubRow(st('source-fold.collapseAll', '折叠全部'), cfg.collapseAll, function (v) {
       cfg.collapseAll = v;
       saveConfig();
     }));
@@ -248,19 +263,19 @@
       localStorage.setItem(configKey, JSON.stringify(cfg));
     }
 
-    container.appendChild(makeSubRow('折叠 std（标准库）', cfg.collapseStd, function (v) {
+    container.appendChild(makeSubRow(st('peek-fold.collapseStd', '折叠 std（标准库）'), cfg.collapseStd, function (v) {
       cfg.collapseStd = v;
       saveConfig();
     }));
-    container.appendChild(makeSubRow('折叠 mod（第三方）', cfg.collapseMod, function (v) {
+    container.appendChild(makeSubRow(st('peek-fold.collapseMod', '折叠 mod（第三方）'), cfg.collapseMod, function (v) {
       cfg.collapseMod = v;
       saveConfig();
     }));
-    container.appendChild(makeSubRow('折叠全部', cfg.collapseAll, function (v) {
+    container.appendChild(makeSubRow(st('peek-fold.collapseAll', '折叠全部'), cfg.collapseAll, function (v) {
       cfg.collapseAll = v;
       saveConfig();
     }));
-    container.appendChild(makeSubRow('缩短路径显示（std/ mod/）', cfg.shortenPaths, function (v) {
+    container.appendChild(makeSubRow(st('peek-fold.shortenPaths', '缩短路径显示（std/ mod/）'), cfg.shortenPaths, function (v) {
       cfg.shortenPaths = v;
       saveConfig();
     }));
@@ -281,7 +296,7 @@
       'cursor:pointer',
       'text-align:center',
     ].join(';');
-    hint.textContent = '点击刷新生效';
+    hint.textContent = st('settings.reload', '点击刷新生效');
     hint.addEventListener('click', function () { location.reload(); });
     panel.appendChild(hint);
   }

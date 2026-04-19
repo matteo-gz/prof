@@ -1,0 +1,97 @@
+{
+  "nav.home": "主页",
+  "nav.files": "文件",
+  "nav.history": "历史",
+
+  "card.fetchOne": "单次采集",
+  "card.fetchUrl": "手动 URL",
+  "card.upload": "上传文件",
+  "card.fetchBatch": "批量采集",
+
+  "label.baseUrl": "Base URL",
+  "label.url": "URL",
+  "label.file": "文件",
+  "label.type": "类型",
+  "label.seconds": "Seconds",
+
+  "hint.baseUrl": "不含类型名，末尾无斜杠",
+  "hint.fullUrl": "完整 URL，含类型和参数",
+  "hint.uploadFile": "上传 .pprof 或 .trace 文件",
+  "hint.urlPreview": "URL 预览",
+
+  "btn.tryDemo": "试一试",
+  "btn.submit": "提交",
+  "btn.getCurl": "获取 curl",
+  "btn.loading": "加载中...",
+  "btn.copy": "复制",
+  "btn.close": "关闭",
+
+  "scene.label": "场景模板",
+  "scene.cpu": "CPU 分析",
+  "scene.mem": "内存分析",
+  "scene.concurrency": "并发分析",
+  "scene.all": "全量采集",
+
+  "type.label": "采集类型",
+  "type.sampling": "采样:",
+  "type.snapshot": "快照:",
+
+  "modal.curlScript": "Curl 脚本",
+
+  "err.enterUrl": "请输入 URL",
+  "fetching": "采集中... ",
+
+  "diff.compare": "Diff 对比",
+  "diff.clear": "清除",
+  "diff.selectSecond": "— 再去选第二个 .pprof 文件",
+  "diff.selected": "✓ 已选",
+  "diff.addCompare": "+ 对比",
+  "diff.vs": "vs",
+
+  "list.directories": "目录",
+  "list.files": "文件",
+
+  "goroutine.modeLabel": "输出模式",
+  "goroutine.modePprof": "pprof 格式",
+  "goroutine.modeText": "文本摘要",
+  "goroutine.modeFull": "完整 dump",
+  "goroutine.stwWarn": "⚠ 会触发 Stop-The-World，goroutine 数量大时请谨慎",
+
+  "heap.modeLabel": "采集模式",
+  "heap.snapshot": "快照",
+  "heap.gcSnapshot": "GC 后快照",
+  "heap.delta": "Delta",
+
+  "allocs.modeLabel": "采集模式",
+  "allocs.snapshot": "快照",
+  "allocs.delta": "Delta",
+
+  "profile.durationLabel": "采集时长",
+  "trace.durationLabel": "采集时长",
+  "trace.hint": "提示：结果用 go tool trace 查看，不同于 pprof",
+
+  "block.prereqWarn": "⚠️ 前置条件：目标程序需调用 runtime.SetBlockProfileRate(rate)，否则采集结果为空文件",
+  "mutex.prereqWarn": "⚠️ 前置条件：目标程序需调用 runtime.SetMutexProfileFraction(rate)，否则采集结果为空文件",
+
+  "threadcreate.hint": "快照 → threadcreate（OS 线程创建调用栈，通常较小）",
+  "cmdline.hint": "无参数，直接采集命令行参数",
+  "symbol.hint": "无参数，返回符号表（通常由 pprof 自动调用）",
+
+  "settings.title": "Prof 插件",
+  "settings.reload": "点击刷新生效",
+  "settings.noPlugins": "暂无插件",
+
+  "plugin.i18n-zh": "界面中文汉化",
+  "plugin.source-fold": "Source 视图函数折叠",
+  "plugin.peek-fold": "Peek 视图分组折叠",
+  "plugin.graph-explain": "Graph 节点点击解释",
+
+  "source-fold.collapseStdlib": "折叠 std（标准库）",
+  "source-fold.collapseThirdParty": "折叠 mod（第三方）",
+  "source-fold.collapseAll": "折叠全部",
+
+  "peek-fold.collapseStd": "折叠 std（标准库）",
+  "peek-fold.collapseMod": "折叠 mod（第三方）",
+  "peek-fold.collapseAll": "折叠全部",
+  "peek-fold.shortenPaths": "缩短路径显示（std/ mod/）"
+}

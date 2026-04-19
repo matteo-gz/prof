@@ -1,0 +1,97 @@
+{
+  "nav.home": "Home",
+  "nav.files": "Files",
+  "nav.history": "History",
+
+  "card.fetchOne": "Fetch One",
+  "card.fetchUrl": "Fetch URL",
+  "card.upload": "Upload File",
+  "card.fetchBatch": "Fetch Batch",
+
+  "label.baseUrl": "Base URL",
+  "label.url": "URL",
+  "label.file": "File",
+  "label.type": "Type",
+  "label.seconds": "Seconds",
+
+  "hint.baseUrl": "No type suffix, no trailing slash",
+  "hint.fullUrl": "Full URL including type and params",
+  "hint.uploadFile": "Upload a .pprof or .trace file",
+  "hint.urlPreview": "URL Preview",
+
+  "btn.tryDemo": "Try Demo",
+  "btn.submit": "Submit",
+  "btn.getCurl": "Get curl",
+  "btn.loading": "Loading...",
+  "btn.copy": "Copy",
+  "btn.close": "Close",
+
+  "scene.label": "Scene Templates",
+  "scene.cpu": "CPU Analysis",
+  "scene.mem": "Memory Analysis",
+  "scene.concurrency": "Concurrency Analysis",
+  "scene.all": "Collect All",
+
+  "type.label": "Profile Types",
+  "type.sampling": "Sampling:",
+  "type.snapshot": "Snapshot:",
+
+  "modal.curlScript": "Curl Script",
+
+  "err.enterUrl": "Please enter a URL",
+  "fetching": "Fetching... ",
+
+  "diff.compare": "Diff",
+  "diff.clear": "Clear",
+  "diff.selectSecond": "— Select a second .pprof file",
+  "diff.selected": "✓ Selected",
+  "diff.addCompare": "+ Compare",
+  "diff.vs": "vs",
+
+  "list.directories": "Directories",
+  "list.files": "Files",
+
+  "goroutine.modeLabel": "Output Mode",
+  "goroutine.modePprof": "pprof format",
+  "goroutine.modeText": "Text summary",
+  "goroutine.modeFull": "Full dump",
+  "goroutine.stwWarn": "⚠ Triggers Stop-The-World, use with caution for large goroutine counts",
+
+  "heap.modeLabel": "Collection Mode",
+  "heap.snapshot": "Snapshot",
+  "heap.gcSnapshot": "GC + Snapshot",
+  "heap.delta": "Delta",
+
+  "allocs.modeLabel": "Collection Mode",
+  "allocs.snapshot": "Snapshot",
+  "allocs.delta": "Delta",
+
+  "profile.durationLabel": "Duration",
+  "trace.durationLabel": "Duration",
+  "trace.hint": "Note: view result with go tool trace, not pprof",
+
+  "block.prereqWarn": "⚠️ Prerequisite: target must call runtime.SetBlockProfileRate(rate), otherwise empty result",
+  "mutex.prereqWarn": "⚠️ Prerequisite: target must call runtime.SetMutexProfileFraction(rate), otherwise empty result",
+
+  "threadcreate.hint": "Snapshot → threadcreate (OS thread creation stacks, usually small)",
+  "cmdline.hint": "No params, returns command-line arguments",
+  "symbol.hint": "No params, returns symbol table (usually called automatically by pprof)",
+
+  "settings.title": "Prof Plugins",
+  "settings.reload": "Click to reload",
+  "settings.noPlugins": "No plugins",
+
+  "plugin.i18n-zh": "Chinese UI Localization",
+  "plugin.source-fold": "Source View Fold",
+  "plugin.peek-fold": "Peek View Fold",
+  "plugin.graph-explain": "Graph Node Explainer",
+
+  "source-fold.collapseStdlib": "Collapse std (stdlib)",
+  "source-fold.collapseThirdParty": "Collapse mod (third-party)",
+  "source-fold.collapseAll": "Collapse all",
+
+  "peek-fold.collapseStd": "Collapse std (stdlib)",
+  "peek-fold.collapseMod": "Collapse mod (third-party)",
+  "peek-fold.collapseAll": "Collapse all",
+  "peek-fold.shortenPaths": "Shorten paths (std/ mod/)"
+}

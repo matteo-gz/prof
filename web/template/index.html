@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Prof</title>
     <link href="/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+    <script src="/static/prof-i18n.js"></script>
     <style>
         body { background-color: #f8f9fa; }
         .navbar-brand { font-weight: 600; letter-spacing: 0.5px; }
@@ -19,9 +20,9 @@
     <div class="container">
         <a class="navbar-brand" href="/">Prof</a>
         <ul class="navbar-nav">
-            <li class="nav-item"><a class="nav-link active" href="/">Home</a></li>
-            <li class="nav-item"><a class="nav-link" href="/history">Files</a></li>
-            <li class="nav-item"><a class="nav-link" href="/person/curl">History</a></li>
+            <li class="nav-item"><a class="nav-link active" href="/" data-i18n="nav.home">Home</a></li>
+            <li class="nav-item"><a class="nav-link" href="/history" data-i18n="nav.files">Files</a></li>
+            <li class="nav-item"><a class="nav-link" href="/person/curl" data-i18n="nav.history">History</a></li>
         </ul>
     </div>
 </nav>
@@ -31,16 +32,16 @@
         <div class="col-md-6 col-lg-3">
             <div class="card h-100">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    Fetch One
-                    <button type="button" class="btn btn-outline-success btn-sm" id="tryDemoOne">Try Demo</button>
+                    <span data-i18n="card.fetchOne">Fetch One</span>
+                    <button type="button" class="btn btn-outline-success btn-sm" id="tryDemoOne" data-i18n="btn.tryDemo">Try Demo</button>
                 </div>
                 <div class="card-body">
-                    <label class="form-label small mb-1">Base URL</label>
+                    <label class="form-label small mb-1" data-i18n="label.baseUrl">Base URL</label>
                     <input class="form-control form-control-sm" name="base_url_one" type="text" placeholder="http://host:port/debug/pprof">
-                    <div class="form-text">不含类型名，末尾无斜杠</div>
+                    <div class="form-text" data-i18n="hint.baseUrl">不含类型名，末尾无斜杠</div>
 
                     <div class="mt-2 d-flex align-items-center gap-2">
-                        <label class="form-label small mb-0 text-nowrap">类型</label>
+                        <label class="form-label small mb-0 text-nowrap" data-i18n="label.type">类型</label>
                         <select class="form-select form-select-sm" id="pprofType" name="pprof_type">
                             <option value="goroutine">goroutine</option>
                             <option value="heap">heap</option>
@@ -58,13 +59,13 @@
                     <div id="typeParamsOne" class="mt-2 p-2 border rounded bg-light small"></div>
 
                     <div class="mt-2">
-                        <input class="form-control form-control-sm font-monospace" id="url_preview_one" type="text" readonly style="color:#6c757d;background:#f8f9fa" placeholder="URL 预览">
+                        <input class="form-control form-control-sm font-monospace" id="url_preview_one" type="text" readonly style="color:#6c757d;background:#f8f9fa" data-i18n-placeholder="hint.urlPreview" placeholder="URL 预览">
                     </div>
 
                     <button type="button" class="btn btn-primary btn-sm mt-3" id="fetchdata1">
-                        <span class="btn-label">Submit</span>
+                        <span class="btn-label" data-i18n="btn.submit">Submit</span>
                     </button>
-                    <button type="button" class="btn btn-outline-secondary btn-sm mt-3 ms-2" id="getCurlOne">Get curl</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm mt-3 ms-2" id="getCurlOne" data-i18n="btn.getCurl">Get curl</button>
                     <div id="result3" class="result-area"></div>
                 </div>
             </div>
@@ -72,30 +73,30 @@
         <div class="col-md-6 col-lg-3">
             <div class="card h-100">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    Fetch URL
-                    <button type="button" class="btn btn-outline-success btn-sm" id="tryDemoUrl">Try Demo</button>
+                    <span data-i18n="card.fetchUrl">Fetch URL</span>
+                    <button type="button" class="btn btn-outline-success btn-sm" id="tryDemoUrl" data-i18n="btn.tryDemo">Try Demo</button>
                 </div>
                 <div class="card-body">
-                    <label class="form-label small mb-1">URL</label>
+                    <label class="form-label small mb-1" data-i18n="label.url">URL</label>
                     <input class="form-control form-control-sm" name="url_manual" type="text" placeholder="http://host:port/debug/pprof/goroutine?debug=1">
-                    <div class="form-text">完整 URL，含类型和参数</div>
+                    <div class="form-text" data-i18n="hint.fullUrl">完整 URL，含类型和参数</div>
                     <button type="button" class="btn btn-primary btn-sm mt-3" id="fetchdataManual">
-                        <span class="btn-label">Submit</span>
+                        <span class="btn-label" data-i18n="btn.submit">Submit</span>
                     </button>
-                    <button type="button" class="btn btn-outline-secondary btn-sm mt-3 ms-2" id="getCurlManual">Get curl</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm mt-3 ms-2" id="getCurlManual" data-i18n="btn.getCurl">Get curl</button>
                     <div id="result_manual" class="result-area"></div>
                 </div>
             </div>
         </div>
         <div class="col-md-6 col-lg-3">
             <div class="card h-100">
-                <div class="card-header">Upload File</div>
+                <div class="card-header" data-i18n="card.upload">Upload File</div>
                 <div class="card-body">
-                    <label class="form-label">File</label>
+                    <label class="form-label" data-i18n="label.file">File</label>
                     <input class="form-control form-control-sm" type="file" name="file" accept="*">
-                    <div class="form-text">Upload a .pprof or .trace file</div>
+                    <div class="form-text" data-i18n="hint.uploadFile">Upload a .pprof or .trace file</div>
                     <button type="button" class="btn btn-primary btn-sm mt-3" id="subf">
-                        <span class="btn-label">Submit</span>
+                        <span class="btn-label" data-i18n="btn.submit">Submit</span>
                     </button>
                     <div id="result2" class="result-area"></div>
                 </div>
@@ -104,27 +105,27 @@
         <div class="col-md-6 col-lg-3">
             <div class="card h-100">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    Fetch Batch
-                    <button type="button" class="btn btn-outline-success btn-sm" id="tryDemoBatch">Try Demo</button>
+                    <span data-i18n="card.fetchBatch">Fetch Batch</span>
+                    <button type="button" class="btn btn-outline-success btn-sm" id="tryDemoBatch" data-i18n="btn.tryDemo">Try Demo</button>
                 </div>
                 <div class="card-body">
-                    <label class="form-label">Base URL</label>
+                    <label class="form-label" data-i18n="label.baseUrl">Base URL</label>
                     <input class="form-control form-control-sm" type="text" name="url" placeholder="http://host:port/debug/pprof">
 
                     <div class="mt-2 mb-1">
-                        <small class="text-muted d-block mb-1">场景模板</small>
+                        <small class="text-muted d-block mb-1" data-i18n="scene.label">场景模板</small>
                         <div class="btn-group btn-group-sm" id="sceneTemplates">
-                            <button type="button" class="btn btn-outline-secondary" data-scene="cpu">CPU 分析</button>
-                            <button type="button" class="btn btn-outline-secondary" data-scene="mem">内存分析</button>
-                            <button type="button" class="btn btn-outline-secondary" data-scene="concurrency">并发分析</button>
-                            <button type="button" class="btn btn-outline-secondary" data-scene="all">全量采集</button>
+                            <button type="button" class="btn btn-outline-secondary" data-scene="cpu" data-i18n="scene.cpu">CPU 分析</button>
+                            <button type="button" class="btn btn-outline-secondary" data-scene="mem" data-i18n="scene.mem">内存分析</button>
+                            <button type="button" class="btn btn-outline-secondary" data-scene="concurrency" data-i18n="scene.concurrency">并发分析</button>
+                            <button type="button" class="btn btn-outline-secondary" data-scene="all" data-i18n="scene.all">全量采集</button>
                         </div>
                     </div>
 
                     <div class="mt-1 p-2 border rounded bg-light" id="typeSelector">
-                        <small class="text-muted d-block mb-1">采集类型</small>
+                        <small class="text-muted d-block mb-1" data-i18n="type.label">采集类型</small>
                         <div class="d-flex flex-wrap align-items-center gap-1">
-                            <small class="text-muted me-1">采样:</small>
+                            <small class="text-muted me-1" data-i18n="type.sampling">采样:</small>
                             <div class="form-check form-check-inline mb-0">
                                 <input class="form-check-input pprof-type-cb" type="checkbox" id="typeProfile" value="profile" checked>
                                 <label class="form-check-label small" for="typeProfile">CPU Profile</label>
@@ -135,7 +136,7 @@
                             </div>
                         </div>
                         <div class="d-flex flex-wrap align-items-center gap-1 mt-1">
-                            <small class="text-muted me-1">快照:</small>
+                            <small class="text-muted me-1" data-i18n="type.snapshot">快照:</small>
                             <div class="form-check form-check-inline mb-0">
                                 <input class="form-check-input pprof-type-cb" type="checkbox" id="typeGoroutine" value="goroutine" checked>
                                 <label class="form-check-label small" for="typeGoroutine">goroutine</label>
@@ -206,9 +207,9 @@
                     </div>
 
                     <button type="button" class="btn btn-primary btn-sm mt-3" id="fetchdata">
-                        <span class="btn-label">Submit</span>
+                        <span class="btn-label" data-i18n="btn.submit">Submit</span>
                     </button>
-                    <button type="button" class="btn btn-outline-secondary btn-sm mt-3 ms-2" id="getCurlBatch">Get curl</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm mt-3 ms-2" id="getCurlBatch" data-i18n="btn.getCurl">Get curl</button>
                     <div id="result" class="result-area"></div>
                 </div>
             </div>
@@ -221,7 +222,7 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header py-2">
-                <h6 class="modal-title mb-0">Curl Script</h6>
+                <h6 class="modal-title mb-0" data-i18n="modal.curlScript">Curl Script</h6>
                 <button type="button" class="btn-close" id="curlModalClose"></button>
             </div>
             <div class="modal-body p-2">
@@ -229,8 +230,8 @@
                      style="max-height:400px;overflow-y:auto;white-space:pre-wrap;word-break:break-all"></pre>
             </div>
             <div class="modal-footer py-2">
-                <button type="button" class="btn btn-primary btn-sm" id="copyCurlBtn">复制</button>
-                <button type="button" class="btn btn-secondary btn-sm" id="curlModalDismiss">关闭</button>
+                <button type="button" class="btn btn-primary btn-sm" id="copyCurlBtn" data-i18n="btn.copy">复制</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="curlModalDismiss" data-i18n="btn.close">关闭</button>
             </div>
         </div>
     </div>
@@ -343,14 +344,14 @@
         var label = btn.querySelector(".btn-label");
         if (loading) {
             btn.disabled = true;
-            label.textContent = " Loading...";
+            label.textContent = " " + t('btn.loading');
             var sp = document.createElement("span");
             sp.className = "spinner-border spinner-border-sm";
             sp.setAttribute("role", "status");
             btn.insertBefore(sp, label);
         } else {
             btn.disabled = false;
-            label.textContent = "Submit";
+            label.textContent = t('btn.submit');
             var sp = btn.querySelector(".spinner-border");
             if (sp) sp.remove();
         }
@@ -370,7 +371,7 @@
 
         var u = document.querySelector('input[name="' + inputName + '"]').value;
         if (u === "") {
-            showError(resultEl, "Please enter a URL");
+            showError(resultEl, t('err.enterUrl'));
             return;
         }
 
@@ -381,7 +382,7 @@
         var pass = 0;
         var itv = setInterval(function () {
             ++pass;
-            resultEl.textContent = "Fetching... " + pass + "s";
+            resultEl.textContent = t('fetching') + pass + "s";
         }, 1000);
 
         var formdata = new FormData();
@@ -409,7 +410,7 @@
     function fetchProfileFromUrl(u, endpoint, resultEl, lockKey, actLabel, btn, params) {
         if (locks[lockKey]) { return; }
         if (!u) {
-            showError(resultEl, "Please enter a URL");
+            showError(resultEl, t('err.enterUrl'));
             return;
         }
         locks[lockKey] = true;
@@ -419,7 +420,7 @@
         var pass = 0;
         var itv = setInterval(function () {
             ++pass;
-            resultEl.textContent = "Fetching... " + pass + "s";
+            resultEl.textContent = t('fetching') + pass + "s";
         }, 1000);
 
         var formdata = new FormData();
@@ -697,7 +698,7 @@
 
         var u = document.querySelector('input[name="url"]').value;
         if (u === "") {
-            showError(resultBatch, "Please enter a URL");
+            showError(resultBatch, t('err.enterUrl'));
             return;
         }
 
@@ -714,7 +715,7 @@
         var pass = 0;
         var itv = setInterval(function () {
             ++pass;
-            resultBatch.textContent = "Fetching... " + pass + "s";
+            resultBatch.textContent = t('fetching') + pass + "s";
         }, 1000);
 
         var selectedTypes = getSelectedTypes();
@@ -764,7 +765,7 @@
     document.querySelector("#fetchdata1").addEventListener("click", function () {
         var u = buildOneUrl();
         if (!u || u.endsWith("/")) {
-            showError(resultOne, "Please enter a Base URL");
+            showError(resultOne, t('err.enterUrl'));
             return;
         }
         fetchProfileFromUrl(u, "/opt/run1", resultOne, "run1", "fetch-one", this, { url: u });
@@ -779,60 +780,60 @@
 
     var oneTypeHTML = {
         goroutine: [
-            '<div class="mb-1 fw-semibold">输出模式</div>',
+            '<div class="mb-1 fw-semibold">' + t('goroutine.modeLabel') + '</div>',
             '<div class="form-check"><input class="form-check-input" type="radio" name="goroutine_mode" id="g_pprof" value="" checked>',
-            '<label class="form-check-label" for="g_pprof">pprof 格式 <span class="text-muted">— goroutine（flame graph）</span></label></div>',
+            '<label class="form-check-label" for="g_pprof">' + t('goroutine.modePprof') + ' <span class="text-muted">— goroutine（flame graph）</span></label></div>',
             '<div class="form-check"><input class="form-check-input" type="radio" name="goroutine_mode" id="g_debug1" value="debug=1">',
-            '<label class="form-check-label" for="g_debug1">文本摘要 <span class="text-muted">— goroutine?debug=1（总数 + 栈分布）</span></label></div>',
+            '<label class="form-check-label" for="g_debug1">' + t('goroutine.modeText') + ' <span class="text-muted">— goroutine?debug=1（总数 + 栈分布）</span></label></div>',
             '<div class="form-check"><input class="form-check-input" type="radio" name="goroutine_mode" id="g_debug2" value="debug=2">',
-            '<label class="form-check-label" for="g_debug2">完整 dump <span class="badge bg-warning text-dark ms-1">⚠ STW</span> <span class="text-muted">— goroutine?debug=2</span></label></div>',
-            '<div class="text-danger mt-1" id="goroutineStw" style="display:none">⚠️ 会触发 Stop-The-World，goroutine 数量大时请谨慎</div>'
+            '<label class="form-check-label" for="g_debug2">' + t('goroutine.modeFull') + ' <span class="badge bg-warning text-dark ms-1">⚠ STW</span> <span class="text-muted">— goroutine?debug=2</span></label></div>',
+            '<div class="text-danger mt-1" id="goroutineStw" style="display:none">' + t('goroutine.stwWarn') + '</div>'
         ].join(""),
 
         heap: [
-            '<div class="mb-1 fw-semibold">采集模式</div>',
+            '<div class="mb-1 fw-semibold">' + t('heap.modeLabel') + '</div>',
             '<div class="form-check"><input class="form-check-input" type="radio" name="heap_mode" id="h_snap" value="" checked>',
-            '<label class="form-check-label" for="h_snap">快照 <span class="text-muted">— heap（当前堆内存）</span></label></div>',
+            '<label class="form-check-label" for="h_snap">' + t('heap.snapshot') + ' <span class="text-muted">— heap（当前堆内存）</span></label></div>',
             '<div class="form-check"><input class="form-check-input" type="radio" name="heap_mode" id="h_gc" value="gc=1">',
-            '<label class="form-check-label" for="h_gc">GC 后快照 <span class="text-muted">— heap?gc=1（真实存活对象，更准确）</span></label></div>',
+            '<label class="form-check-label" for="h_gc">' + t('heap.gcSnapshot') + ' <span class="text-muted">— heap?gc=1（真实存活对象，更准确）</span></label></div>',
             '<div class="d-flex align-items-center gap-2 mt-1">',
             '<input class="form-check-input flex-shrink-0" type="radio" name="heap_mode" id="h_delta" value="seconds=">',
-            '<label class="form-check-label me-1" for="h_delta">Delta</label>',
+            '<label class="form-check-label me-1" for="h_delta">' + t('heap.delta') + '</label>',
             '<input type="number" id="heapDeltaSec" value="30" min="1" max="180" class="form-control form-control-sm" style="width:60px">',
             '<span class="text-muted">秒 — heap?seconds=N</span></div>'
         ].join(""),
 
         allocs: [
-            '<div class="mb-1 fw-semibold">采集模式</div>',
+            '<div class="mb-1 fw-semibold">' + t('allocs.modeLabel') + '</div>',
             '<div class="form-check"><input class="form-check-input" type="radio" name="allocs_mode" id="al_snap" value="" checked>',
-            '<label class="form-check-label" for="al_snap">快照 <span class="text-muted">— allocs（历史累计分配）</span></label></div>',
+            '<label class="form-check-label" for="al_snap">' + t('allocs.snapshot') + ' <span class="text-muted">— allocs（历史累计分配）</span></label></div>',
             '<div class="d-flex align-items-center gap-2 mt-1">',
             '<input class="form-check-input flex-shrink-0" type="radio" name="allocs_mode" id="al_delta" value="seconds=">',
-            '<label class="form-check-label me-1" for="al_delta">Delta</label>',
+            '<label class="form-check-label me-1" for="al_delta">' + t('allocs.delta') + '</label>',
             '<input type="number" id="allocsDeltaSec" value="30" min="1" max="180" class="form-control form-control-sm" style="width:60px">',
             '<span class="text-muted">秒 — allocs?seconds=N</span></div>'
         ].join(""),
 
         profile: [
-            '<div class="mb-1 fw-semibold">采集时长</div>',
+            '<div class="mb-1 fw-semibold">' + t('profile.durationLabel') + '</div>',
             '<div class="d-flex align-items-center gap-2">',
             '<input type="number" id="profileSec" value="30" min="1" max="180" class="form-control form-control-sm" style="width:60px">',
             '<span class="text-muted">秒 → profile?seconds=N</span></div>'
         ].join(""),
 
         trace: [
-            '<div class="mb-1 fw-semibold">采集时长</div>',
+            '<div class="mb-1 fw-semibold">' + t('trace.durationLabel') + '</div>',
             '<div class="d-flex align-items-center gap-2">',
             '<input type="number" id="traceSec1" value="5" min="1" max="180" class="form-control form-control-sm" style="width:60px">',
             '<span class="text-muted">秒 → trace?seconds=N</span></div>',
-            '<div class="text-muted mt-1">提示：结果用 go tool trace 查看，不同于 pprof</div>'
+            '<div class="text-muted mt-1">' + t('trace.hint') + '</div>'
         ].join(""),
 
         block: [
-            '<div class="alert alert-warning py-1 px-2 mb-2">⚠️ 前置条件：目标程序需调用 <code>runtime.SetBlockProfileRate(rate)</code>，否则采集结果为空文件</div>',
-            '<div class="mb-1 fw-semibold">采集模式</div>',
+            '<div class="alert alert-warning py-1 px-2 mb-2">' + t('block.prereqWarn') + ' <code>runtime.SetBlockProfileRate(rate)</code></div>',
+            '<div class="mb-1 fw-semibold">' + t('heap.modeLabel') + '</div>',
             '<div class="form-check"><input class="form-check-input" type="radio" name="block_mode" id="bl_snap" value="" checked>',
-            '<label class="form-check-label" for="bl_snap">快照 → block</label></div>',
+            '<label class="form-check-label" for="bl_snap">' + t('heap.snapshot') + ' → block</label></div>',
             '<div class="d-flex align-items-center gap-2 mt-1">',
             '<input class="form-check-input flex-shrink-0" type="radio" name="block_mode" id="bl_delta" value="seconds=">',
             '<label class="form-check-label me-1" for="bl_delta">Delta</label>',
@@ -841,10 +842,10 @@
         ].join(""),
 
         mutex: [
-            '<div class="alert alert-warning py-1 px-2 mb-2">⚠️ 前置条件：目标程序需调用 <code>runtime.SetMutexProfileFraction(rate)</code>，否则采集结果为空文件</div>',
-            '<div class="mb-1 fw-semibold">采集模式</div>',
+            '<div class="alert alert-warning py-1 px-2 mb-2">' + t('mutex.prereqWarn') + ' <code>runtime.SetMutexProfileFraction(rate)</code></div>',
+            '<div class="mb-1 fw-semibold">' + t('heap.modeLabel') + '</div>',
             '<div class="form-check"><input class="form-check-input" type="radio" name="mutex_mode" id="mx_snap" value="" checked>',
-            '<label class="form-check-label" for="mx_snap">快照 → mutex</label></div>',
+            '<label class="form-check-label" for="mx_snap">' + t('heap.snapshot') + ' → mutex</label></div>',
             '<div class="d-flex align-items-center gap-2 mt-1">',
             '<input class="form-check-input flex-shrink-0" type="radio" name="mutex_mode" id="mx_delta" value="seconds=">',
             '<label class="form-check-label me-1" for="mx_delta">Delta</label>',
@@ -852,9 +853,9 @@
             '<span class="text-muted">秒 → mutex?seconds=N</span></div>'
         ].join(""),
 
-        threadcreate: '<div class="text-muted">快照 → threadcreate（OS 线程创建调用栈，通常较小）</div>',
-        cmdline:      '<div class="text-muted">无参数，直接采集命令行参数</div>',
-        symbol:       '<div class="text-muted">无参数，返回符号表（通常由 pprof 自动调用）</div>'
+        threadcreate: '<div class="text-muted">' + t('threadcreate.hint') + '</div>',
+        cmdline:      '<div class="text-muted">' + t('cmdline.hint') + '</div>',
+        symbol:       '<div class="text-muted">' + t('symbol.hint') + '</div>'
     };
 
     function getOneParams(type) {
@@ -940,7 +941,7 @@
 
     document.querySelector("#fetchdataManual").addEventListener("click", function () {
         var u = document.querySelector('input[name="url_manual"]').value;
-        if (!u) { showError(resultManual, "Please enter a URL"); return; }
+        if (!u) { showError(resultManual, t('err.enterUrl')); return; }
         fetchProfileFromUrl(u, "/opt/run1", resultManual, "run1_manual", "fetch-url", this, { url: u });
     });
 
@@ -990,8 +991,8 @@
         var text = document.querySelector("#curlScriptContent").textContent;
         var btn = this;
         navigator.clipboard.writeText(text).then(function () {
-            btn.textContent = "已复制 ✓";
-            setTimeout(function () { btn.textContent = "复制"; }, 2000);
+            btn.textContent = "✓";
+            setTimeout(function () { btn.textContent = t('btn.copy'); }, 2000);
         });
     });
 
