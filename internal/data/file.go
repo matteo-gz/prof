@@ -3,7 +3,6 @@ package data
 import (
 	"fmt"
 	"os"
-	"path"
 	"sort"
 	"strings"
 
@@ -38,19 +37,11 @@ func (f *file) getAbsDir(relPath string) string {
 	return f.dir + relPath
 }
 func getFileType(dir string) (fileType string) {
-	ext := path.Ext(dir)
-	if ext != "" {
-		ext = ext[1:]
-	}
-	if pproftype.ExtTrace == ext {
-		return pproftype.ExtTrace
-	} else if pproftype.ExtTxt == ext {
-		return pproftype.ExtTxt
-	} else if pproftype.ExtPprof == ext {
-		return pproftype.ExtPprof
-	} else {
+	sniffed, err := checkMimeByDir(dir)
+	if err != nil {
 		return pproftype.ExtUnknown
 	}
+	return sniffed
 }
 func (f *file) getFileList(date string) (list []string, files []biz.FileInfo, err error) {
 	final := f.getAbsDir(date)
@@ -67,7 +58,12 @@ func (f *file) getFileList(date string) (list []string, files []biz.FileInfo, er
 		if fi.IsDir() {
 			list = append(list, fi.Name())
 		} else {
-			files = append(files, biz.FileInfo{Name: fi.Name(), Size: fi.Size()})
+			absFile := final + string(os.PathSeparator) + fi.Name()
+			files = append(files, biz.FileInfo{
+				Name: fi.Name(),
+				Size: fi.Size(),
+				Type: getFileType(absFile),
+			})
 		}
 	}
 	sort.Sort(sort.Reverse(sort.StringSlice(list)))

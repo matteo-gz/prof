@@ -34,3 +34,17 @@ func (uc *Usecase) GetBatchGroups(date string) ([]BatchGroup, error) {
 func (uc *Usecase) GetFileType(dir string) string {
 	return uc.repo.GetFileType(dir)
 }
+
+func (uc *Usecase) AnalyzeTop(enBase64Dir string, n int, sampleIdx int, cumSort bool) (*TopResult, error) {
+	dir, err := base64.StdEncoding.DecodeString(enBase64Dir)
+	if err != nil {
+		return nil, err
+	}
+	absPath := uc.repo.GetAbsDir(string(dir))
+	result, err := AnalyzeTop(absPath, n, sampleIdx, cumSort)
+	if err != nil {
+		return nil, err
+	}
+	result.Path = string(dir)
+	return result, nil
+}

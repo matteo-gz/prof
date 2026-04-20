@@ -163,13 +163,25 @@ func (b *batch) run(ctx context.Context, task urlTask, ch chan Cse, wg *sync.Wai
 
 func (uc *Usecase) DealRun(ctx context.Context, p BatchParams) (res []Cse, err error) {
 	b := newBatchFromParams(p, uc.log, uc.denyPrivateIP, uc.samplingSeconds, uc.deltaSeconds, uc.traceSeconds)
-	return b.Start(ctx, uc.repo.CreateFile)
+	dir, err := uc.repo.PreAllocDir()
+	if err != nil {
+		return
+	}
+	return b.Start(ctx, func(uri, contentType string, data []byte) (string, error) {
+		return uc.repo.CreateFileInDir(dir, uri, contentType, data)
+	})
 }
 
 // DealRunLegacy handles the old URL-based batch request for backward compatibility.
 func (uc *Usecase) DealRunLegacy(ctx context.Context, uri string) (res []Cse, err error) {
 	b := newBatchLegacy(uri, uc.log, uc.denyPrivateIP, uc.samplingSeconds, uc.deltaSeconds, uc.traceSeconds)
-	return b.Start(ctx, uc.repo.CreateFile)
+	dir, err := uc.repo.PreAllocDir()
+	if err != nil {
+		return
+	}
+	return b.Start(ctx, func(u, contentType string, data []byte) (string, error) {
+		return uc.repo.CreateFileInDir(dir, u, contentType, data)
+	})
 }
 
 func (b *batch) setUrl() (err error) {

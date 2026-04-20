@@ -66,15 +66,29 @@ func (rp *repo) GetFileList(date string) (list []string, files []biz.FileInfo, e
 	return rp.data.file.getFileList(date)
 }
 func (rp *repo) GetFileType(dir string) string {
-	return getFileType(dir)
+	return getFileType(rp.data.file.getAbsDir(dir))
+}
+
+func (rp *repo) PreAllocDir() (string, error) {
+	return rp.data.file.createDir()
+}
+
+func (rp *repo) CreateFileInDir(absDir, uri, contentType string, data []byte) (RelativePath string, err error) {
+	if _, err = checkMimeByData(data, contentType); err != nil {
+		return
+	}
+	filename, err := rp.data.file.getFileName(uri)
+	if err != nil {
+		return
+	}
+	return rp.data.file.createFile(filename, absDir, data)
 }
 
 func (rp *repo) CreateFile(uri, contentType string, data []byte) (RelativePath string, err error) {
-	var ext string
-	if ext, err = checkMimeByData(data, contentType); err != nil {
+	if _, err = checkMimeByData(data, contentType); err != nil {
 		return
 	}
-	filename, err := rp.data.file.getFileName(uri, ext)
+	filename, err := rp.data.file.getFileName(uri)
 	if err != nil {
 		return
 	}
@@ -85,17 +99,12 @@ func (rp *repo) CreateFile(uri, contentType string, data []byte) (RelativePath s
 	return rp.data.file.createFile(filename, dir, data)
 }
 func (rp *repo) CreateFileByUpload(fileName string, data []byte) (relativePath string, err error) {
-	var ext string
-	if ext, err = checkMimeByData(data, ""); err != nil {
-		return
-	}
-	filename, err := rp.data.file.getFileName2(fileName, ext)
-	if err != nil {
+	if _, err = checkMimeByData(data, ""); err != nil {
 		return
 	}
 	dir, err := rp.data.file.createDir()
 	if err != nil {
 		return
 	}
-	return rp.data.file.createFile(filename, dir, data)
+	return rp.data.file.createFile(fileName, dir, data)
 }

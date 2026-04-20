@@ -3,15 +3,17 @@ package data
 import (
 	"errors"
 	"fmt"
-	"github.com/gabriel-vasile/mimetype"
-	"github.com/matteo-gz/prof/pkg/filex"
-	"github.com/matteo-gz/prof/pkg/pproftype"
 	"net/url"
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
+
+	"github.com/gabriel-vasile/mimetype"
+	"github.com/matteo-gz/prof/pkg/filex"
+	"github.com/matteo-gz/prof/pkg/pproftype"
 )
 
 const (
@@ -20,17 +22,25 @@ const (
 	mimeTxt   = "text/plain"
 )
 
-func (f *file) getFileName(uri, ext string) (filename string, err error) {
+func (f *file) getFileName(uri string) (filename string, err error) {
 	u2, err := url.Parse(uri)
 	if err != nil {
 		return
 	}
 	filename = strings.ReplaceAll(path.Base(u2.Path), "/", "_")
-	filename += "." + ext
-	return
-}
-func (f *file) getFileName2(name, ext string) (filename string, err error) {
-	filename = name + "." + ext
+	q := u2.Query()
+	keys := make([]string, 0, len(q))
+	for k := range q {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		v := q.Get(k)
+		if v == "" || v == "0" {
+			continue
+		}
+		filename += "_" + k + "_" + v
+	}
 	return
 }
 
@@ -89,7 +99,7 @@ func checkMimeByDir(dir string) (string, error) {
 func (f *file) dirName() string {
 	t := time.Now()
 	dateStr := t.Format("20060102")
-	id := fmt.Sprintf("%d_%d_%d", t.Hour(), t.Minute(), t.Second())
+	id := fmt.Sprintf("%02d_%02d_%02d", t.Hour(), t.Minute(), t.Second())
 	dir := f.getAbsDir(fmt.Sprintf("/%s/%s", dateStr, id))
 	dir = filepath.Join(filepath.Split(dir))
 	return dir

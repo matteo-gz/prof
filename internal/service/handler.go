@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -329,6 +330,66 @@ func (s *Service) APIPlugins(c *gin.Context) {
 		},
 	},
 	})
+}
+
+type apiEndpoint struct {
+	Method string            `json:"method"`
+	Path   string            `json:"path"`
+	Desc   string            `json:"description"`
+	Params []apiParam        `json:"params,omitempty"`
+}
+
+type apiParam struct {
+	Name     string `json:"name"`
+	In       string `json:"in"`
+	Required bool   `json:"required"`
+	Default  string `json:"default,omitempty"`
+	Desc     string `json:"description"`
+}
+
+func (s *Service) APIIndex(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"name":    "Prof API",
+		"version": "1.0",
+		"docs":    "https://github.com/matteo-gz/prof",
+		"endpoints": []apiEndpoint{
+			{
+				Method: "GET",
+				Path:   "/api/",
+				Desc:   "API 索引，返回所有可用接口列表",
+			},
+			{
+				Method: "GET",
+				Path:   "/api/plugins",
+				Desc:   "获取已注册的 JS 插件列表及启用状态",
+			},
+			{
+				Method: "GET",
+				Path:   "/api/pprof/:dir/top",
+				Desc:   "解析 .pprof 文件，返回 Top N 热点函数（flat/cum）",
+				Params: []apiParam{
+					{Name: "dir", In: "path", Required: true, Desc: "profile 相对路径的 base64 编码（与 /pprof/:dir/ 相同）"},
+					{Name: "n", In: "query", Default: "20", Desc: "返回前 N 个函数"},
+					{Name: "si", In: "query", Default: "-1", Desc: "SampleType 索引，-1 = 最后一个（与 go tool pprof 一致）"},
+					{Name: "cum", In: "query", Default: "false", Desc: "true 时按 cum 排序，否则按 flat 排序"},
+				},
+			},
+		},
+	})
+}
+
+func (s *Service) APIPprofTop(c *gin.Context) {
+	dir := c.Param("dir")
+	n, _ := strconv.Atoi(c.DefaultQuery("n", "20"))
+	si, _ := strconv.Atoi(c.DefaultQuery("si", "-1"))
+	cumSort := c.Query("cum") == "true"
+
+	result, err := s.uc.AnalyzeTop(dir, n, si, cumSort)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, result)
 }
 
 func (s *Service) Run1(c *gin.Context) {
