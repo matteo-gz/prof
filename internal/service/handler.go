@@ -374,6 +374,51 @@ func (s *Service) APIIndex(c *gin.Context) {
 					{Name: "cum", In: "query", Default: "false", Desc: "true 时按 cum 排序，否则按 flat 排序"},
 				},
 			},
+			{
+				Method: "GET",
+				Path:   "/api/pprof/:dir/source",
+				Desc:   "解析 .pprof，按源码行聚合 flat/cum；需 f 正则过滤函数名",
+				Params: []apiParam{
+					{Name: "dir", In: "path", Required: true, Desc: "profile 相对路径 base64"},
+					{Name: "f", In: "query", Default: "(空)", Desc: "函数名正则；空字符串与 go tool pprof Web 一致，等价匹配全部符号"},
+					{Name: "si", In: "query", Default: "-1", Desc: "SampleType 索引"},
+					{Name: "margin", In: "query", Default: "5", Desc: "采样行前后附加展示行数"},
+					{Name: "max_files", In: "query", Default: "50", Desc: "最多返回多少个源文件（按采样权重排序），与 pprof weblist 上限一致"},
+					{Name: "source_path", In: "query", Default: "", Desc: "源码搜索路径（可多路径，与 PATH 分隔符一致），找不到文件时必填"},
+				},
+			},
+			{
+				Method: "GET",
+				Path:   "/api/pprof/:dir/peek",
+				Desc:   "调用关系：对每个匹配正则的函数列出 callers / callees 边权重（相对该节点 cum 的占比）",
+				Params: []apiParam{
+					{Name: "dir", In: "path", Required: true, Desc: "profile 相对路径 base64"},
+					{Name: "f", In: "query", Default: "(空)", Desc: "函数名正则；空串匹配全部（结果可能很多）"},
+					{Name: "si", In: "query", Default: "-1", Desc: "SampleType 索引"},
+				},
+			},
+			{
+				Method: "GET",
+				Path:   "/api/pprof/:dir/flame",
+				Desc:   "火焰图数据：与 pprof Web /flamegraph 相同的 stacks + sources 模型（每样本一条栈）",
+				Params: []apiParam{
+					{Name: "dir", In: "path", Required: true, Desc: "profile 相对路径 base64"},
+					{Name: "si", In: "query", Default: "-1", Desc: "SampleType 索引"},
+					{Name: "trim_path", In: "query", Default: "", Desc: "裁剪路径前缀（与 go tool pprof -trim_path 一致，多路径用 PATH 分隔符）"},
+					{Name: "source_path", In: "query", Default: "", Desc: "源码搜索路径（未设置 trim_path 时用于启发式缩短路径）"},
+				},
+			},
+			{
+				Method: "GET",
+				Path:   "/api/pprof/:dir/flame/layout",
+				Desc:   "火焰图合并树 + 行/列占位 + 占比与可读大小（row1=root，同行多列=同父下按权重从左到右）",
+				Params: []apiParam{
+					{Name: "dir", In: "path", Required: true, Desc: "profile 相对路径 base64"},
+					{Name: "si", In: "query", Default: "-1", Desc: "SampleType 索引"},
+					{Name: "trim_path", In: "query", Default: "", Desc: "同 /flame"},
+					{Name: "source_path", In: "query", Default: "", Desc: "同 /flame"},
+				},
+			},
 		},
 	})
 }
@@ -385,6 +430,63 @@ func (s *Service) APIPprofTop(c *gin.Context) {
 	cumSort := c.Query("cum") == "true"
 
 	result, err := s.uc.AnalyzeTop(dir, n, si, cumSort)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, result)
+}
+
+func (s *Service) APIPprofSource(c *gin.Context) {
+	f := c.Query("f")
+	dir := c.Param("dir")
+	si, _ := strconv.Atoi(c.DefaultQuery("si", "-1"))
+	margin, _ := strconv.Atoi(c.DefaultQuery("margin", "5"))
+	maxFiles, _ := strconv.Atoi(c.DefaultQuery("max_files", "50"))
+	sourcePath := c.Query("source_path")
+
+	result, err := s.uc.AnalyzeSource(dir, f, si, margin, sourcePath, maxFiles)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, result)
+}
+
+func (s *Service) APIPprofPeek(c *gin.Context) {
+	dir := c.Param("dir")
+	f := c.Query("f")
+	si, _ := strconv.Atoi(c.DefaultQuery("si", "-1"))
+
+	result, err := s.uc.AnalyzePeek(dir, f, si)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, result)
+}
+
+func (s *Service) APIPprofFlame(c *gin.Context) {
+	dir := c.Param("dir")
+	si, _ := strconv.Atoi(c.DefaultQuery("si", "-1"))
+	trimPath := c.Query("trim_path")
+	sourcePath := c.Query("source_path")
+
+	result, err := s.uc.AnalyzeFlame(dir, si, trimPath, sourcePath)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, result)
+}
+
+func (s *Service) APIPprofFlameLayout(c *gin.Context) {
+	dir := c.Param("dir")
+	si, _ := strconv.Atoi(c.DefaultQuery("si", "-1"))
+	trimPath := c.Query("trim_path")
+	sourcePath := c.Query("source_path")
+
+	result, err := s.uc.AnalyzeFlameLayout(dir, si, trimPath, sourcePath)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
