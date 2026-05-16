@@ -34,6 +34,7 @@ func (s *Service) Index(c *gin.Context) {
 		"SamplingSeconds": s.samplingSeconds,
 		"DeltaSeconds":    s.deltaSeconds,
 		"TraceSeconds":    s.traceSeconds,
+		"ProfBin":         s.profBin,
 	}
 	if err := s.tmpl.ExecuteTemplate(&buf, "index.html", data); err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
@@ -318,28 +319,28 @@ func (s *Service) APIPlugins(c *gin.Context) {
 				Enabled:     s.pluginsConfig.SourceFold,
 				Description: "Source 视图函数折叠",
 			},
-		{
-			Name:        "peek-fold",
-			Enabled:     s.pluginsConfig.PeekFold,
-			Description: "Peek 视图分组折叠",
+			{
+				Name:        "peek-fold",
+				Enabled:     s.pluginsConfig.PeekFold,
+				Description: "Peek 视图分组折叠",
+			},
+			{
+				Name:        "graph-explain",
+				Enabled:     s.pluginsConfig.GraphExplain,
+				Description: "Graph 节点点击解释",
+			},
 		},
-		{
-			Name:        "graph-explain",
-			Enabled:     s.pluginsConfig.GraphExplain,
-			Description: "Graph 节点点击解释",
-		},
-	},
 	})
 }
 
 type apiEndpoint struct {
-	Method          string            `json:"method"`
-	Path            string            `json:"path"`
-	Desc            string            `json:"description"`
-	Params          []apiParam        `json:"params,omitempty"`
-	ResponseSummary string            `json:"response_summary,omitempty"`
-	ResponseSchema  []apiField        `json:"response_schema,omitempty"`
-	ResponseExample map[string]any    `json:"response_example,omitempty"`
+	Method          string         `json:"method"`
+	Path            string         `json:"path"`
+	Desc            string         `json:"description"`
+	Params          []apiParam     `json:"params,omitempty"`
+	ResponseSummary string         `json:"response_summary,omitempty"`
+	ResponseSchema  []apiField     `json:"response_schema,omitempty"`
+	ResponseExample map[string]any `json:"response_example,omitempty"`
 }
 
 type apiParam struct {
@@ -363,9 +364,9 @@ func (s *Service) APIIndex(c *gin.Context) {
 		"docs":    "https://github.com/matteo-gz/prof",
 		"endpoints": []apiEndpoint{
 			{
-				Method: "GET",
-				Path:   "/api/",
-				Desc:   "API 索引，返回所有可用接口列表",
+				Method:          "GET",
+				Path:            "/api/",
+				Desc:            "API 索引，返回所有可用接口列表",
 				ResponseSummary: "返回 API 元信息与 endpoint 列表",
 				ResponseSchema: []apiField{
 					{Name: "name", Type: "string", Desc: "API 名称"},
@@ -383,9 +384,9 @@ func (s *Service) APIIndex(c *gin.Context) {
 				},
 			},
 			{
-				Method: "GET",
-				Path:   "/api/plugins",
-				Desc:   "获取已注册的 JS 插件列表及启用状态",
+				Method:          "GET",
+				Path:            "/api/plugins",
+				Desc:            "获取已注册的 JS 插件列表及启用状态",
 				ResponseSummary: "返回插件名、开关状态与用途说明",
 				ResponseSchema: []apiField{
 					{Name: "plugins", Type: "array<object>", Desc: "插件数组"},
@@ -421,10 +422,10 @@ func (s *Service) APIIndex(c *gin.Context) {
 					{Name: "top[].rank/name/flat/cum/flat_pct/sum_pct/cum_pct", Type: "mixed", Desc: "排名、函数名、flat/cum 及百分比"},
 				},
 				ResponseExample: map[string]any{
-					"path": "/20260420/23_34_52/heap",
+					"path":        "/20260420/23_34_52/heap",
 					"sample_type": map[string]any{"type": "inuse_space", "unit": "bytes"},
-					"total": 6043872,
-					"unit":  "bytes",
+					"total":       6043872,
+					"unit":        "bytes",
 					"top": []map[string]any{
 						{"rank": 1, "name": "runtime.mallocgc", "flat": 2100281, "flat_pct": 34.75, "sum_pct": 34.75, "cum": 2100281, "cum_pct": 34.75},
 					},

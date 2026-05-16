@@ -58,6 +58,7 @@ func (h *HTTPServerX) router() (r *gin.Engine, err error) {
 	api := r.Group("/api")
 	{
 		api.GET("/", h.srv.APIIndex)
+		api.GET("/mcp-hint", h.srv.APIMcpHint)
 		api.GET("/plugins", h.srv.APIPlugins)
 		api.GET("/pprof/:dir/peek", h.srv.APIPprofPeek)
 		api.GET("/pprof/:dir/source", h.srv.APIPprofSource)

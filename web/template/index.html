@@ -14,7 +14,7 @@
         .result-area { min-height: 40px; margin-top: 12px; }
     </style>
 </head>
-<body>
+<body{{if .ProfBin}} data-prof-bin="{{.ProfBin}}"{{end}}>
 
 <nav class="navbar navbar-expand navbar-light bg-white border-bottom mb-4">
     <div class="container">
@@ -23,6 +23,7 @@
             <li class="nav-item"><a class="nav-link active" href="/" data-i18n="nav.home">Home</a></li>
             <li class="nav-item"><a class="nav-link" href="/history" data-i18n="nav.files">Files</a></li>
             <li class="nav-item"><a class="nav-link" href="/person/curl" data-i18n="nav.history">History</a></li>
+            <li class="nav-item"><a class="nav-link" href="#" id="navUseMcp" data-i18n="nav.useMcp">Use MCP</a></li>
         </ul>
     </div>
 </nav>
@@ -217,6 +218,44 @@
     </div>
 </div>
 
+<!-- MCP / Cursor Modal -->
+<div class="modal fade" id="mcpModal" tabindex="-1" style="display:none">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h6 class="modal-title mb-0" data-i18n="mcp.title">Use MCP (Cursor)</h6>
+                <button type="button" class="btn-close" id="mcpModalClose" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="small text-muted mb-3" data-i18n="mcp.intro">Cursor 通过子进程 prof mcp 调用本页同一 API。请保持本 Web 服务运行。</p>
+                <div class="mb-3 d-flex align-items-center gap-2 flex-wrap">
+                    <span class="small text-muted" data-i18n="mcp.apiStatus">API 状态</span>
+                    <span id="mcpApiBadge" class="badge bg-secondary">…</span>
+                    <span class="small font-monospace text-muted" id="mcpApiBase"></span>
+                </div>
+                <label class="form-label small mb-1" data-i18n="mcp.profPath">prof 可执行文件路径</label>
+                <input type="text" class="form-control form-control-sm font-monospace mb-1" id="mcpProfBin"
+                       data-i18n-placeholder="mcp.profPathPlaceholder" placeholder="/path/to/prof"{{if .ProfBin}} value="{{.ProfBin}}"{{end}}>
+                <p id="mcpPathHint" class="form-text text-danger small mb-2" style="display:none" data-i18n="mcp.pathInvalid">请只填 prof 可执行文件的绝对路径，不要粘贴下方 JSON。</p>
+                <p class="form-text small text-muted mb-2" data-i18n="mcp.pathHint">示例：/Users/z/work/self/github/prof/prof</p>
+                <label class="form-label small mb-1" data-i18n="mcp.configLabel">~/.cursor/mcp.json 片段</label>
+                <pre id="mcpConfigContent" class="bg-light p-3 rounded small mb-3"
+                     style="max-height:280px;overflow:auto;white-space:pre"></pre>
+                <ol class="small text-muted mb-0 ps-3">
+                    <li data-i18n="mcp.step1">Cursor → Settings → MCP → Edit in JSON</li>
+                    <li data-i18n="mcp.step2">粘贴下方配置（或合并 mcpServers.prof）</li>
+                    <li data-i18n="mcp.step3">保存并重载 MCP；在对话中让模型使用 prof 工具</li>
+                </ol>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-primary btn-sm" id="mcpCopyConfigBtn" data-i18n="mcp.copyConfig">复制配置</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="mcpCopyArgsBtn" data-i18n="mcp.copyArgs">仅复制 args</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="mcpModalDismiss" data-i18n="btn.close">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Curl Script Modal -->
 <div class="modal fade" id="curlModal" tabindex="-1" style="display:none">
     <div class="modal-dialog modal-lg">
@@ -238,6 +277,7 @@
 </div>
 
 {{template "storageKeys" .}}
+<script src="/static/prof-mcp.js"></script>
 <script src="/static/plugins/loader.js"></script>
 <script>
     var locks = {};

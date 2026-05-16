@@ -7,3 +7,4 @@ storage/*
 *.exe
 .vscode
 *.code-workspace
+prof
