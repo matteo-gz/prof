@@ -2,10 +2,11 @@ package biz
 
 import "github.com/go-kratos/kratos/v2/log"
 
-// FileInfo holds name and size for a file in the storage directory.
+// FileInfo holds name, size and detected type for a file in the storage directory.
 type FileInfo struct {
 	Name string
 	Size int64
+	Type string // "pprof" | "trace" | "txt" | "unknown"
 }
 
 // BatchGroup holds files from one collection batch under a date directory.
@@ -22,7 +23,9 @@ type Repo interface {
 	GetFileList(date string) (list []string, files []FileInfo, err error)
 	GetBatchGroups(date string) ([]BatchGroup, error)
 	GetFileType(dir string) string
+	PreAllocDir() (absDir string, err error)
 	CreateFile(url string, contentType string, data []byte) (relativePath string, err error)
+	CreateFileInDir(absDir, url, contentType string, data []byte) (relativePath string, err error)
 	CreateFileByUpload(fileName string, data []byte) (relativePath string, err error)
 }
 

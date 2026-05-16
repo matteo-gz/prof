@@ -60,7 +60,7 @@
             </div>
             <ul class="list-group list-group-flush">
                 {{range .Files}}
-                <li class="list-group-item file-item py-2 d-flex align-items-center gap-2" data-size="{{.Size}}" data-name="{{.Name}}" data-path="{{$groupDir}}/{{.Name}}">
+                <li class="list-group-item file-item py-2 d-flex align-items-center gap-2" data-size="{{.Size}}" data-name="{{.Name}}" data-type="{{.Type}}" data-path="{{$groupDir}}/{{.Name}}">
                     <span class="file-icon">&#128196;</span>
                     <a target="_blank" href="/file?dir={{$groupDir}}/{{.Name}}">{{.Name}}</a>
                     <span class="text-muted small ms-auto file-size"></span>
@@ -77,7 +77,7 @@
         <div class="card-header py-2 small text-muted" data-i18n="list.files">Files</div>
         <ul class="list-group list-group-flush" id="fileList">
             {{range $_ := .files}}
-            <li class="list-group-item file-item py-2 d-flex align-items-center gap-2" data-size="{{.Size}}" data-name="{{.Name}}" data-path="{{$dir}}/{{.Name}}">
+            <li class="list-group-item file-item py-2 d-flex align-items-center gap-2" data-size="{{.Size}}" data-name="{{.Name}}" data-type="{{.Type}}" data-path="{{$dir}}/{{.Name}}">
                 <span class="file-icon">&#128196;</span>
                 <a target="_blank" href="/file?dir={{$dir}}/{{.Name}}">{{.Name}}</a>
                 <span class="text-muted small ms-auto file-size"></span>
@@ -109,42 +109,29 @@
         return (bytes / (1024 * 1024)).toFixed(1) + " MB";
     }
 
-    function fileBadge(name) {
+    // dataType: value from data-type attribute (Go content-sniff result), may be empty
+    // "pprof" | "trace" | "txt" | "unknown"
+    function fileKind(name, dataType) {
+        if (dataType) return dataType;
+        if (name.endsWith(".trace")) return "trace";
+        if (name.endsWith(".txt"))   return "txt";
+        if (name.endsWith(".pprof")) return "pprof";
+        return "unknown";
+    }
+
+    function fileBadge(name, dataType) {
+        var kind = fileKind(name, dataType);
         var sp = document.createElement("span");
         sp.className = "badge me-1";
-        var base = name.replace(/\.[^.]+$/, "");
-        if (name.endsWith(".trace")) {
+        if (kind === "pprof") {
+            sp.className += " bg-primary";
+            sp.textContent = "pprof";
+        } else if (kind === "trace") {
             sp.className += " bg-info text-dark";
-            sp.textContent = "Trace";
-        } else if (name.endsWith(".pprof")) {
-            if (base === "profile") {
-                sp.className += " bg-danger";
-                sp.textContent = "CPU Profile";
-            } else if (base === "goroutine") {
-                sp.className += " bg-warning text-dark";
-                sp.textContent = "Goroutine";
-            } else if (base === "heap") {
-                sp.className += " bg-success";
-                sp.textContent = "Heap";
-            } else if (base === "allocs") {
-                sp.className += " bg-success";
-                sp.textContent = "Allocs";
-            } else if (base === "block") {
-                sp.className += " bg-secondary";
-                sp.textContent = "Block";
-            } else if (base === "mutex") {
-                sp.className += " bg-secondary";
-                sp.textContent = "Mutex";
-            } else if (base === "threadcreate") {
-                sp.className += " bg-secondary";
-                sp.textContent = "Thread";
-            } else {
-                sp.className += " bg-primary";
-                sp.textContent = "pprof";
-            }
-        } else if (name.endsWith(".txt")) {
+            sp.textContent = "trace";
+        } else if (kind === "txt") {
             sp.className += " bg-light text-dark border";
-            sp.textContent = "Meta";
+            sp.textContent = "txt";
         } else {
             return null;
         }
@@ -179,7 +166,8 @@
             var link = items[j].querySelector("a");
             if (!link) continue;
             var name = items[j].getAttribute("data-name") || link.textContent;
-            var badge = fileBadge(name);
+            var dataType = items[j].getAttribute("data-type") || "";
+            var badge = fileBadge(name, dataType);
             if (badge) items[j].insertBefore(badge, link);
 
             var sizeEl = items[j].querySelector(".file-size");
@@ -259,7 +247,8 @@
             var items = document.querySelectorAll("li[data-name]");
             for (var i = 0; i < items.length; i++) {
                 var name = items[i].getAttribute("data-name");
-                if (!name || !name.endsWith(".pprof")) continue;
+                var dtype = items[i].getAttribute("data-type") || "";
+                if (!name || fileKind(name, dtype) !== "pprof") continue;
                 var path = items[i].getAttribute("data-path");
                 var btn = items[i].querySelector(".diff-add-btn");
                 var inBasket = isInBasket(path);
@@ -319,6 +308,7 @@
         renderBar();
     })();
 </script>
+<script src="/static/prof-mcp.js"></script>
 <script src="/static/plugins/loader.js"></script>
 </body>
 </html>

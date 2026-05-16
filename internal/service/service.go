@@ -21,6 +21,7 @@ type Service struct {
 	traceSeconds    int
 	tmpl            *template.Template
 	pluginsConfig   conf.PluginsConfig
+	profBin         string // os.Executable() at process start, for MCP Cursor config UI
 }
 
 func NewService(c *conf.Bs, uc *biz.Usecase, logger log.Logger) *Service {
@@ -55,6 +56,7 @@ func NewService(c *conf.Bs, uc *biz.Usecase, logger log.Logger) *Service {
 		log:             log.NewHelper(logger),
 		tmpl:            tmpl,
 		pluginsConfig:   pluginsCfg,
+		profBin:         resolveProfExecutable(),
 	}
 }
 

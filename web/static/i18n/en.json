@@ -2,6 +2,7 @@
   "nav.home": "Home",
   "nav.files": "Files",
   "nav.history": "History",
+  "nav.useMcp": "Use MCP",
 
   "card.fetchOne": "Fetch One",
   "card.fetchUrl": "Fetch URL",
@@ -37,6 +38,22 @@
   "type.snapshot": "Snapshot:",
 
   "modal.curlScript": "Curl Script",
+
+  "mcp.title": "Use MCP (Cursor)",
+  "mcp.intro": "Cursor runs prof mcp as a subprocess to call the same API as this page. Keep this web server running.",
+  "mcp.apiStatus": "API status",
+  "mcp.apiOk": "OK",
+  "mcp.apiDown": "Unreachable",
+  "mcp.profPath": "prof binary path",
+  "mcp.profPathPlaceholder": "/path/to/prof",
+  "mcp.pathHint": "Auto-detected from the running prof binary (os.Executable); you may edit it. Do not paste the JSON below.",
+  "mcp.pathInvalid": "Not a valid path (looks like JSON was pasted). Clear the field and enter the prof binary path.",
+  "mcp.configLabel": "~/.cursor/mcp.json snippet",
+  "mcp.step1": "Cursor → Settings → MCP → Edit in JSON",
+  "mcp.step2": "Paste the config below (or merge mcpServers.prof)",
+  "mcp.step3": "Save and reload MCP; ask the model to use prof tools in chat",
+  "mcp.copyConfig": "Copy config",
+  "mcp.copyArgs": "Copy args only",
 
   "err.enterUrl": "Please enter a URL",
   "fetching": "Fetching... ",

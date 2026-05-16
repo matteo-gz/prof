@@ -3,10 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
+
 	"github.com/go-kratos/kratos/v2/log"
-	"github.com/matteo-gz/prof/internal/conf"
-	"github.com/matteo-gz/prof/internal/server"
+
 	"github.com/matteo-gz/prof/internal/appx"
+	"github.com/matteo-gz/prof/internal/conf"
+	"github.com/matteo-gz/prof/internal/mcpprof"
+	"github.com/matteo-gz/prof/internal/server"
 	"github.com/matteo-gz/prof/pkg/logx"
 )
 
@@ -30,6 +33,15 @@ func init() {
 }
 func main() {
 	flag.Parse()
+	if args := flag.Args(); len(args) > 0 && args[0] == "mcp" {
+		base, err := mcpprof.ResolveAPIBase(flagConf, flagPort, flagEnv, flagDir, flagPprofPort, flagLog)
+		if err != nil {
+			panic(fmt.Errorf("mcp: resolve API base (use -port, -c env.yaml, or PROF_API_BASE): %w", err))
+		}
+		mcpprof.RunStdio(base)
+		return
+	}
+
 	bs, err := conf.Load(flagConf, flagPort, flagEnv, flagDir, flagPprofPort, flagLog)
 	if err != nil {
 		panic(err)

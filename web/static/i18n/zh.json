@@ -2,6 +2,7 @@
   "nav.home": "主页",
   "nav.files": "文件",
   "nav.history": "历史",
+  "nav.useMcp": "Use MCP",
 
   "card.fetchOne": "单次采集",
   "card.fetchUrl": "手动 URL",
@@ -37,6 +38,22 @@
   "type.snapshot": "快照:",
 
   "modal.curlScript": "Curl 脚本",
+
+  "mcp.title": "Use MCP（Cursor）",
+  "mcp.intro": "Cursor 通过子进程 prof mcp 调用本页同一 API。请保持本 Web 服务运行。",
+  "mcp.apiStatus": "API 状态",
+  "mcp.apiOk": "可达",
+  "mcp.apiDown": "不可达",
+  "mcp.profPath": "prof 可执行文件路径",
+  "mcp.profPathPlaceholder": "/path/to/prof",
+  "mcp.pathHint": "启动 Web 时会自动检测当前 prof 可执行文件路径（os.Executable）；也可手动修改。不要粘贴下方 JSON。",
+  "mcp.pathInvalid": "当前内容不是有效路径（可能误贴了 JSON）。请清空后只填 prof 可执行文件路径。",
+  "mcp.configLabel": "~/.cursor/mcp.json 片段",
+  "mcp.step1": "Cursor → Settings → MCP → Edit in JSON",
+  "mcp.step2": "粘贴下方配置（或合并 mcpServers.prof）",
+  "mcp.step3": "保存并重载 MCP；在对话中让模型使用 prof 工具",
+  "mcp.copyConfig": "复制配置",
+  "mcp.copyArgs": "仅复制 args",
 
   "err.enterUrl": "请输入 URL",
   "fetching": "采集中... ",
